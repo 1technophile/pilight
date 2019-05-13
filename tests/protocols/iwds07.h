@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2019 by mwka
+  Copyright (C) 2019 - 2019 by CurlyMo, wo-rasp
 
   This Source Code Form is subject to the terms of the Mozilla Public
   License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -34,13 +34,13 @@ static const struct raw_t iwds07_tests[] = {
 	},
 	{
 		"1236 412 412 1236 1236 412 1236 412 412 1236 1236 412 412 1236 1236 412 1236 412 1236 412 412 1236 412 1236 412 1236 1236 412 1236 412 1236 412 412 1236 412 1236 412 1236 412 1236 1236 412 412 1236 1236 412 412 1236 412 14008",
-        "{\"unit\":58285,\"battery\":1,\"state\":\"opened\"}",
+		"{\"unit\":58285,\"battery\":1,\"state\":\"opened\"}",
 		NULL,
 		0
 	}
 	{
 		"1242 414 414 1242 1242 414 1242 414 414 1242 1242 414 414 1656 1242 414 1242 414 1242 414 414 1242 414 1242 414 1242 1242 414 1242 414 1242 414 414 1242 414 1242 414 1242 414 1242 1242 414 1242 414 1242 414 414 1242 414 14076",
-        "{\"unit\":58285,\"battery\":1,\"state\":\"closed\"}",
+		"{\"unit\":58285,\"battery\":1,\"state\":\"closed\"}",
 		NULL,
 		0
 	}
