@@ -16,7 +16,6 @@
 #include "../../core/dso.h"
 #include "../../core/log.h"
 #include "../../core/binary.h"
-#include "../../core/gc.h"
 #include "../protocol.h"
 #include "iwds07.h"
 
