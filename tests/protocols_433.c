@@ -56,7 +56,7 @@ static const struct test_t tests[] = {
 	{ &alectoWS1700Init, &alecto_ws1700, alecto_ws1700_tests, &alecto_ws1700_nrtests },
 	{ &alectoWX500Init, &alecto_wx500, alecto_wx500_tests, &alecto_wx500_nrtests },
 	{ &arctechContactInit, &arctech_contact, arctech_contact_tests, &arctech_contact_nrtests },
-	{ &iwds07Init, &iwds07_contact, iwds07_tests, &iwds07_nrtests },
+	{ &iwds07Init, &iwds07, iwds07_tests, &iwds07_nrtests },
 	{ &arctechDimmerInit, &arctech_dimmer, arctech_dimmer_tests, &arctech_dimmer_nrtests },
 	{ &arctechDuskInit, &arctech_dusk, arctech_dusk_tests, &arctech_dusk_nrtests },
 	{ &livoloSwitchInit, &livolo_switch, livolo_switch_tests, &livolo_switch_nrtests },
