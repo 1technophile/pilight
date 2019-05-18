@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2017 - 2019 by CurlyMo, wo-rasp
+  Copyright (C) 2017 - 2019 by CurlyMo, Meloen, zeltom, mwka, wo-rasp
 
   This Source Code Form is subject to the terms of the Mozilla Public
   License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -36,18 +36,24 @@ static int validate(void) {
 	return -1;
 }
 
-static void createMessage(int unit, int battery, int state) {
-	iwds07->message=json_mkobject();
-	json_append_member(iwds07->message, "unit", json_mknumber(unit, 0));
-	json_append_member(iwds07->message, "battery", json_mknumber(battery, 0));
-	if(state == 1) {
-		json_append_member(iwds07->message, "state", json_mkstring("closed"));
-	} else {
-		json_append_member(iwds07->message, "state", json_mkstring("opened"));
+static void createMessage(int unit, int battery, int state, char **message) {
+	int x = 0;
+	x = snprintf((*message), 255, "{\"unit\":%d,", unit);
+			logprintf(LOG_ERR, "create message TEST %d", unit);
+	if(state == 0) {
+	    x += snprintf(&(*message)[x], 255-x, "\"state\":\"closed\"");
+	}else{
+	    x += snprintf(&(*message)[x], 255-x, "\"state\":\"opened\"");
+    }
+    if(battery == 0) {
+	    x += snprintf(&(*message)[x], 255-x, "\"battery\":0");
+    }else{
+	    x += snprintf(&(*message)[x], 255-x, "\"battery\":1");
 	}
+	x += snprintf(&(*message)[x], 255-x, "}");
 }
 
-static void parseCode(void) {
+static void parseCode(char **message) {
 	int binary[RAW_LENGTH/2], i=0, x=0;
 	int unit=0, battery=-1, state=-1;
 
@@ -67,7 +73,7 @@ static void parseCode(void) {
 	unit = binToDec(binary, 0, 19);
 	battery = binToDec(binary, 20, 20);
 	state = binToDec(binary, 21, 21);
-	createMessage(unit, battery, state);
+	createMessage(unit, battery, state, message);
 }
 
 #if !defined(MODULE) && !defined(_WIN32)
