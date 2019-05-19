@@ -19,54 +19,70 @@
 #include "../protocol.h"
 #include "iwds07.h"
 
-#define PULSE_MULTIPLIER	3
-#define MIN_PULSE_LENGTH	415
-#define MAX_PULSE_LENGTH	1245
-#define AVG_PULSE_LENGTH	830
-#define FOOTER				14110
-#define RAW_LENGTH			50
+#define PULSE_MULTIPLIER 3
+#define MIN_PULSE_LENGTH 415
+#define MAX_PULSE_LENGTH 1245
+#define AVG_PULSE_LENGTH 830
+#define FOOTER 14110
+#define RAW_LENGTH 50
 
-static int validate(void) {
-	if(iwds07->rawlen == RAW_LENGTH) {
-		if(iwds07->raw[iwds07->rawlen-1] >= (FOOTER*0.9) &&
-			iwds07->raw[iwds07->rawlen-1] <= (FOOTER*1.1)) {
+static int validate(void)
+{
+	if (iwds07->rawlen == RAW_LENGTH)
+	{
+		if (iwds07->raw[iwds07->rawlen - 1] >= (FOOTER * 0.9) &&
+				iwds07->raw[iwds07->rawlen - 1] <= (FOOTER * 1.1))
+		{
 			return 0;
 		}
 	}
 	return -1;
 }
 
-static void createMessage(int unit, int battery, int state, char **message) {
+static void createMessage(int unit, int battery, int state, char **message)
+{
 	int x = 0;
 	x = snprintf((*message), 255, "{\"unit\":%d,", unit);
-			logprintf(LOG_ERR, "create message TEST %d", unit);
-	if(state == 0) {
-	    x += snprintf(&(*message)[x], 255-x, "\"state\":\"closed\"");
-	}else{
-	    x += snprintf(&(*message)[x], 255-x, "\"state\":\"opened\"");
-    }
-    if(battery == 0) {
-	    x += snprintf(&(*message)[x], 255-x, "\"battery\":0");
-    }else{
-	    x += snprintf(&(*message)[x], 255-x, "\"battery\":1");
+	logprintf(LOG_ERR, "create message TEST %d", unit);
+	if (state == 0)
+	{
+		x += snprintf(&(*message)[x], 255 - x, "\"state\":\"closed\"");
 	}
-	x += snprintf(&(*message)[x], 255-x, "}");
+	else
+	{
+		x += snprintf(&(*message)[x], 255 - x, "\"state\":\"opened\"");
+	}
+	if (battery == 0)
+	{
+		x += snprintf(&(*message)[x], 255 - x, "\"battery\":0");
+	}
+	else
+	{
+		x += snprintf(&(*message)[x], 255 - x, "\"battery\":1");
+	}
+	x += snprintf(&(*message)[x], 255 - x, "}");
 }
 
-static void parseCode(char **message) {
-	int binary[RAW_LENGTH/2], i=0, x=0;
-	int unit=0, battery=-1, state=-1;
+static void parseCode(char **message)
+{
+	int binary[RAW_LENGTH / 2], i = 0, x = 0;
+	int unit = 0, battery = -1, state = -1;
 
-	if(iwds07->rawlen>RAW_LENGTH) {
+	if (iwds07->rawlen > RAW_LENGTH)
+	{
 		logprintf(LOG_ERR, "iwds07: parsecode - invalid parameter passed %d", iwds07->rawlen);
 		return;
 	}
 
-	for(x=0;x<iwds07->rawlen-2;x+=2) {
-		if(iwds07->raw[x] < AVG_PULSE_LENGTH) {
-			binary[i++]=0;
-		} else {
-			binary[i++]=1;
+	for (x = 0; x < iwds07->rawlen - 2; x += 2)
+	{
+		if (iwds07->raw[x] < AVG_PULSE_LENGTH)
+		{
+			binary[i++] = 0;
+		}
+		else
+		{
+			binary[i++] = 1;
 		}
 	}
 
@@ -79,7 +95,9 @@ static void parseCode(char **message) {
 #if !defined(MODULE) && !defined(_WIN32)
 __attribute__((weak))
 #endif
-void iwds07Init(void) {
+void
+iwds07Init(void)
+{
 	protocol_register(&iwds07);
 	protocol_set_id(iwds07, "GS-iwds07");
 	protocol_device_add(iwds07, "GS-iwds07", "lightinthebox GS-iwds07 contacts");
@@ -87,28 +105,29 @@ void iwds07Init(void) {
 	iwds07->hwtype = RF433;
 	iwds07->minrawlen = RAW_LENGTH;
 	iwds07->maxrawlen = RAW_LENGTH;
-	iwds07->maxgaplen = FOOTER-200;
-	iwds07->mingaplen = FOOTER+200;
+	iwds07->maxgaplen = FOOTER - 200;
+	iwds07->mingaplen = FOOTER + 200;
 
 	options_add(&iwds07->options, 'u', "unit", OPTION_HAS_VALUE, DEVICES_ID, JSON_NUMBER, NULL, NULL);
 	options_add(&iwds07->options, 'b', "battery", OPTION_HAS_VALUE, DEVICES_VALUE, JSON_NUMBER, NULL, "^[01]$");
 	options_add(&iwds07->options, 't', "opened", OPTION_NO_VALUE, DEVICES_STATE, JSON_STRING, NULL, NULL);
 	options_add(&iwds07->options, 'f', "closed", OPTION_NO_VALUE, DEVICES_STATE, JSON_STRING, NULL, NULL);
-
 	options_add(&iwds07->options, 0, "readonly", OPTION_HAS_VALUE, GUI_SETTING, JSON_NUMBER, (void *)0, "^[10]{1}$");
 
-	iwds07->parseCode=&parseCode;
-	iwds07->validate=&validate;
+	iwds07->parseCode = &parseCode;
+	iwds07->validate = &validate;
 }
 #if defined(MODULE) && !defined(_WIN32)
-void compatibility(struct module_t *module) {
+void compatibility(struct module_t *module)
+{
 	module->name = "iwds07";
 	module->version = "1.00";
 	module->reqversion = "7.0";
 	module->reqcommit = "100";
 }
 
-void init(void) {
+void init(void)
+{
 	iwds07Init();
 }
 #endif
