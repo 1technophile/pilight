@@ -6,8 +6,8 @@
   file, You can obtain one at http://mozilla.org/MPL/2.0/.
 */
 
-#ifndef _PROTOCOL_GW_IWDS07_H_
-#define _PROTOCOL_GW_IWDS07_H_
+#ifndef _PROTOCOL_IWDS07_H_
+#define _PROTOCOL_IWDS07_H_
 
 #include "../protocol.h"
 
