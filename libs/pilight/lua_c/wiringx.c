@@ -120,11 +120,11 @@ static int plua_wiringx_set_userdata(lua_State *L) {
 	struct lua_wiringx_t *wiringx = (void *)lua_topointer(L, lua_upvalueindex(1));
 
 	if(lua_gettop(L) != 1) {
-		luaL_error(L, "wiringx.setUserdata requires 1 argument, %d given", lua_gettop(L));
+		pluaL_error(L, "wiringx.setUserdata requires 1 argument, %d given", lua_gettop(L));
 	}
 
 	if(wiringx == NULL) {
-		luaL_error(L, "internal error: wiringx object not passed");
+		pluaL_error(L, "internal error: wiringx object not passed");
 	}
 
 	char buf[128] = { '\0' }, *p = buf;
@@ -145,7 +145,10 @@ static int plua_wiringx_set_userdata(lua_State *L) {
 		if(wiringx->table->ref != NULL) {
 			uv_sem_post(wiringx->table->ref);
 		}
-		plua_ret_true(L);
+
+		lua_pushboolean(L, 1);
+
+		assert(plua_check_stack(L, 1, PLUA_TBOOLEAN) == 0);
 
 		return 1;
 	}
@@ -157,11 +160,16 @@ static int plua_wiringx_set_userdata(lua_State *L) {
 			lua_pop(L, 1);
 		}
 
-		plua_ret_true(L);
+		lua_pushboolean(L, 1);
+
+		assert(plua_check_stack(L, 1, PLUA_TBOOLEAN) == 0);
+
 		return 1;
 	}
 
-	plua_ret_false(L);
+	lua_pushboolean(L, 0);
+
+	assert(plua_check_stack(L, 1, PLUA_TBOOLEAN) == 0);
 
 	return 0;
 }
@@ -170,25 +178,25 @@ static int plua_wiringx_get_userdata(lua_State *L) {
 	struct lua_wiringx_t *wiringx = (void *)lua_topointer(L, lua_upvalueindex(1));
 
 	if(lua_gettop(L) != 0) {
-		luaL_error(L, "wiringx.getUserdata requires 0 argument, %d given", lua_gettop(L));
+		pluaL_error(L, "wiringx.getUserdata requires 0 argument, %d given", lua_gettop(L));
 		return 0;
 	}
 
 	if(wiringx == NULL) {
-		luaL_error(L, "internal error: wiringx object not passed");
+		pluaL_error(L, "internal error: wiringx object not passed");
 		return 0;
 	}
 
 	plua_metatable__push(L, (struct plua_interface_t *)wiringx);
 
-	assert(lua_gettop(L) == 1);
+	assert(plua_check_stack(L, 1, PLUA_TTABLE) == 0);
 
 	return 1;
 }
 
 int plua_wiringx_digital_write(struct lua_State *L) {
 	if(lua_gettop(L) < 2 || lua_gettop(L) > 3) {
-		luaL_error(L, "wiringX digitalWrite requires 2 or 3 arguments, %d given", lua_gettop(L));
+		pluaL_error(L, "wiringX digitalWrite requires 2 or 3 arguments, %d given", lua_gettop(L));
 	}
 
 	int mode = -1;
@@ -256,7 +264,7 @@ int plua_wiringx_digital_write(struct lua_State *L) {
 		if(is_table == 1) {
 			plua_metatable_free(table);
 		}
-		luaL_error(L, "wiringX digitalWrite mode should be HIGH or LOW", lua_gettop(L));
+		pluaL_error(L, "wiringX digitalWrite mode should be HIGH or LOW", lua_gettop(L));
 	}
 
 	if(wiringXPlatform() == NULL) {
@@ -268,7 +276,7 @@ int plua_wiringx_digital_write(struct lua_State *L) {
 			int i = 0, error = 0;
 			for(i=0;i<table->nrvar;i++) {
 				if(table->table[i].key.type_ != LUA_TNUMBER || table->table[i].val.type_ != LUA_TNUMBER) {
-					luaL_error(L, "wiringX digitalWrite pulses should be a numeric array with numbers", lua_gettop(L));
+					pluaL_error(L, "wiringX digitalWrite pulses should be a numeric array with numbers", lua_gettop(L));
 				}
 			}
 			for(i=0;i<table->nrvar;i++) {
@@ -299,14 +307,14 @@ int plua_wiringx_digital_write(struct lua_State *L) {
 		plua_metatable_free(table);
 	}
 
-	assert(lua_gettop(L) == 1);
+	assert(plua_check_stack(L, 1, PLUA_TNUMBER) == 0);
 
 	return 1;
 }
 
 int plua_wiringx_has_gpio(struct lua_State *L) {
 	if(lua_gettop(L) != 1) {
-		luaL_error(L, "wiringX hasGPIO requires 1 argument, %d given", lua_gettop(L));
+		pluaL_error(L, "wiringX hasGPIO requires 1 argument, %d given", lua_gettop(L));
 	}
 
 	char buf[128] = { '\0' }, *p = buf;
@@ -331,7 +339,7 @@ int plua_wiringx_has_gpio(struct lua_State *L) {
 		lua_pushboolean(L, 0);
 	}
 
-	assert(lua_gettop(L) == 1);
+	assert(plua_check_stack(L, 1, PLUA_TBOOLEAN) == 0);
 
 	return 1;
 }
@@ -340,7 +348,7 @@ int plua_wiringx_pin_mode(struct lua_State *L) {
 	struct lua_wiringx_t *wiringx = (void *)lua_topointer(L, lua_upvalueindex(1));
 
 	if(lua_gettop(L) != 2) {
-		luaL_error(L, "wiringX pinMode requires 2 arguments, %d given", lua_gettop(L));
+		pluaL_error(L, "wiringX pinMode requires 2 arguments, %d given", lua_gettop(L));
 	}
 	int gpio = 0, mode = 0;
 
@@ -400,7 +408,7 @@ int plua_wiringx_pin_mode(struct lua_State *L) {
 		lua_pushboolean(L, 1);
 	}
 
-	assert(lua_gettop(L) == 1);
+	assert(plua_check_stack(L, 1, PLUA_TBOOLEAN) == 0);
 
 	return 1;
 }
@@ -435,7 +443,7 @@ static void plua_wiringx_poll_timer(uv_timer_t *req) {
 		/*
 		 * FIXME shouldn't state be freed?
 		 */
-		luaL_error(state->L, "cannot find %s lua module", name);
+		pluaL_error(state->L, "cannot find %s lua module", name);
 	}
 
 	lua_getfield(state->L, -1, data->callback);
@@ -444,7 +452,7 @@ static void plua_wiringx_poll_timer(uv_timer_t *req) {
 		/*
 		 * FIXME shouldn't state be freed?
 		 */
-		luaL_error(state->L, "%s: wiringx callback %s does not exist", state->module->file, data->callback);
+		pluaL_error(state->L, "%s: wiringx callback %s does not exist", state->module->file, data->callback);
 	}
 
 	plua_wiringx_object(state->L, data->parent);
@@ -459,22 +467,17 @@ static void plua_wiringx_poll_timer(uv_timer_t *req) {
 		lua_settable(state->L, -3);
 	}
 
-	if(lua_pcall(state->L, 3, 0, 0) == LUA_ERRRUN) {
-		if(lua_type(state->L, -1) == LUA_TNIL) {
-			logprintf(LOG_ERR, "%s: syntax error", state->module->file);
-			plua_clear_state(state);
-			return;
-		}
-		if(lua_type(state->L, -1) == LUA_TSTRING) {
-			logprintf(LOG_ERR, "%s", lua_tostring(state->L,  -1));
-			lua_pop(state->L, -1);
-			plua_clear_state(state);
-			return;
-		}
+	assert(plua_check_stack(state->L, 5, PLUA_TTABLE, PLUA_TFUNCTION, PLUA_TTABLE, PLUA_TNUMBER, PLUA_TTABLE) == 0);
+	if(plua_pcall(state->L, state->module->file, 3, 0) == -1) {
+		assert(plua_check_stack(state->L, 0) == 0);
+		plua_clear_state(state);
+		return;
 	}
 
 	lua_remove(state->L, -1);
-	assert(lua_gettop(state->L) == 0);
+
+	assert(plua_check_stack(state->L, 0) == 0);
+
 	plua_clear_state(state);
 
 	return;
@@ -492,7 +495,7 @@ static void plua_wiringx_poll_cb(uv_poll_t *req, int status, int events) {
 #endif
 		uint8_t c = 0;
 
-		(void)read(fd, &c, 1);
+		(void)(read(fd, &c, 1)+1);
 		lseek(fd, 0, SEEK_SET);
 
 		struct timeval tv;
@@ -530,15 +533,15 @@ static int plua_wiringx_isr(struct lua_State *L) {
 	int gpio = -1, mode = -1, interval = 250;
 
 	if(lua_gettop(L) != 3 && lua_gettop(L) != 4) {
-		luaL_error(L, "wiringx.ISR requires 3 or 4 arguments, %d given", lua_gettop(L));
+		pluaL_error(L, "wiringx.ISR requires 3 or 4 arguments, %d given", lua_gettop(L));
 	}
 
 	if(wiringx == NULL) {
-		luaL_error(L, "internal error: wiringx object not passed");
+		pluaL_error(L, "internal error: wiringx object not passed");
 	}
 
 	if(wiringx->module == NULL) {
-		luaL_error(L, "internal error: lua state not properly initialized");
+		pluaL_error(L, "internal error: lua state not properly initialized");
 	}
 
 	{
@@ -589,12 +592,12 @@ static int plua_wiringx_isr(struct lua_State *L) {
 
 			lua_getglobal(L, name);
 			if(lua_type(L, -1) == LUA_TNIL) {
-				luaL_error(L, "cannot find %s lua module", wiringx->module->name);
+				pluaL_error(L, "cannot find %s lua module", wiringx->module->name);
 			}
 
 			lua_getfield(L, -1, func);
 			if(lua_type(L, -1) != LUA_TFUNCTION) {
-				luaL_error(L, "%s: wiringx callback \"%s\" does not exist", wiringx->module->file, func);
+				pluaL_error(L, "%s: wiringx callback \"%s\" does not exist", wiringx->module->file, func);
 			}
 			lua_remove(L, -1);
 			lua_remove(L, -1);
@@ -670,6 +673,8 @@ static int plua_wiringx_isr(struct lua_State *L) {
 		}
 	}
 
+	assert(plua_check_stack(L, 0) == 0);
+
 	return 0;
 }
 
@@ -709,7 +714,7 @@ static void plua_wiringx_object(lua_State *L, struct lua_wiringx_t *wiringx) {
 
 int plua_wiringx_setup(struct lua_State *L) {
 	if(lua_gettop(L) != 1) {
-		luaL_error(L, "wiringX setup requires 1 argument, %d given", lua_gettop(L));
+		pluaL_error(L, "wiringX setup requires 1 argument, %d given", lua_gettop(L));
 	}
 
 #if !defined(__arm__) && !defined(__mips__) && !defined(PILIGHT_UNITTEST)
@@ -741,6 +746,7 @@ int plua_wiringx_setup(struct lua_State *L) {
 
 	struct lua_state_t *state = plua_get_current_state(L);
 	if(state == NULL) {
+		assert(plua_check_stack(L, 0) == 0);
 		return 0;
 	}
 
@@ -780,9 +786,9 @@ int plua_wiringx_setup(struct lua_State *L) {
 		wiringx[i]->module = state->module;
 		plua_wiringx_object(L, wiringx[i]);
 	}
-
-	lua_assert(lua_gettop(L) == 1);
 #endif
+
+	assert(plua_check_stack(L, 1, PLUA_TTABLE | PLUA_TNIL | PLUA_TBOOLEAN) == 0);
 
 	return 1;
 }

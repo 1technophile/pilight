@@ -40,18 +40,18 @@ static int plua_config_device_set_action_id(lua_State *L) {
 	struct plua_device_t *dev = (void *)lua_topointer(L, lua_upvalueindex(1));
 
 	if(dev == NULL) {
-		luaL_error(L, "internal error: device object not passed");
+		pluaL_error(L, "internal error: device object not passed");
 	}
 
 	if(lua_gettop(L) != 0) {
-		luaL_error(L, "config getType requires 0 arguments, %d given", lua_gettop(L));
+		pluaL_error(L, "config getType requires 0 arguments, %d given", lua_gettop(L));
 	}
 
 	unsigned long id = event_action_set_execution_id(dev->name);
 
 	lua_pushnumber(L, id);
 
-	assert(lua_gettop(L) == 1);
+	assert(plua_check_stack(L, 1, PLUA_TNUMBER) == 0);
 
 	return 1;
 }
@@ -60,11 +60,11 @@ static int plua_config_device_get_action_id(lua_State *L) {
 	struct plua_device_t *dev = (void *)lua_topointer(L, lua_upvalueindex(1));
 
 	if(dev == NULL) {
-		luaL_error(L, "internal error: device object not passed");
+		pluaL_error(L, "internal error: device object not passed");
 	}
 
 	if(lua_gettop(L) != 0) {
-		luaL_error(L, "config getType requires 0 arguments, %d given", lua_gettop(L));
+		pluaL_error(L, "config getType requires 0 arguments, %d given", lua_gettop(L));
 	}
 
 	unsigned long id = 0;
@@ -74,7 +74,7 @@ static int plua_config_device_get_action_id(lua_State *L) {
 		lua_pushnumber(L, id);
 	}
 
-	assert(lua_gettop(L) == 1);
+	assert(plua_check_stack(L, 1, PLUA_TNIL | PLUA_TNUMBER) == 0);
 
 	return 1;
 }
@@ -83,16 +83,16 @@ static int plua_config_device_get_name(lua_State *L) {
 	struct plua_device_t *dev = (void *)lua_topointer(L, lua_upvalueindex(1));
 
 	if(dev == NULL) {
-		luaL_error(L, "internal error: device object not passed");
+		pluaL_error(L, "internal error: device object not passed");
 	}
 
 	if(lua_gettop(L) != 0) {
-		luaL_error(L, "config getName requires 0 arguments, %d given", lua_gettop(L));
+		pluaL_error(L, "config getName requires 0 arguments, %d given", lua_gettop(L));
 	}
 
 	lua_pushstring(L, dev->name);
 
-	assert(lua_gettop(L) == 1);
+	assert(plua_check_stack(L, 1, PLUA_TSTRING) == 0);
 
 	return 1;
 }
@@ -102,11 +102,11 @@ static int plua_config_device_get_type(lua_State *L) {
 	int x = 0, type = 0;
 
 	if(dev == NULL) {
-		luaL_error(L, "internal error: device object not passed");
+		pluaL_error(L, "internal error: device object not passed");
 	}
 
 	if(lua_gettop(L) != 0) {
-		luaL_error(L, "config getType requires 0 arguments, %d given", lua_gettop(L));
+		pluaL_error(L, "config getType requires 0 arguments, %d given", lua_gettop(L));
 	}
 
 	lua_newtable(L);
@@ -116,7 +116,7 @@ static int plua_config_device_get_type(lua_State *L) {
 		lua_settable(L, -3);
 	}
 
-	assert(lua_gettop(L) == 1);
+	assert(plua_check_stack(L, 1, PLUA_TTABLE) == 0);
 
 	return 1;
 }
@@ -126,11 +126,11 @@ static int plua_config_device_has_setting(lua_State *L) {
 	const char *setting = NULL;
 
 	if(dev == NULL) {
-		luaL_error(L, "internal error: device object not passed");
+		pluaL_error(L, "internal error: device object not passed");
 	}
 
 	if(lua_gettop(L) != 1) {
-		luaL_error(L, "config getType requires 1 arguments, %d given", lua_gettop(L));
+		pluaL_error(L, "config getType requires 1 arguments, %d given", lua_gettop(L));
 	}
 
 	char buf[128] = { '\0' }, *p = buf;
@@ -149,13 +149,14 @@ static int plua_config_device_has_setting(lua_State *L) {
 		devices_select_string_setting(ORIGIN_ACTION, dev->name, (char *)setting, NULL) == 0) {
 		lua_pushboolean(L, 1);
 
-		assert(lua_gettop(L) == 1);
+		assert(plua_check_stack(L, 1, PLUA_TBOOLEAN) == 0);
+
 		return 1;
 	}
 
 	lua_pushboolean(L, 0);
 
-	assert(lua_gettop(L) == 1);
+	assert(plua_check_stack(L, 1, PLUA_TBOOLEAN) == 0);
 
 	return 1;
 }
@@ -165,11 +166,11 @@ static int plua_config_device_get_id(lua_State *L) {
 	int i = 0;
 
 	if(dev == NULL) {
-		luaL_error(L, "internal error: device object not passed");
+		pluaL_error(L, "internal error: device object not passed");
 	}
 
 	if(lua_gettop(L) != 0) {
-		luaL_error(L, "config getType requires 0 arguments, %d given", lua_gettop(L));
+		pluaL_error(L, "config getType requires 0 arguments, %d given", lua_gettop(L));
 	}
 
 	struct JsonNode *jrespond = NULL;
@@ -199,15 +200,16 @@ static int plua_config_device_get_id(lua_State *L) {
 			}
 		}
 
-		assert(lua_gettop(L) == 1);
+		assert(plua_check_stack(L, 1, PLUA_TTABLE) == 0);
+
 		return 1;
 	}
 
 	lua_pushnil(L);
 
-	assert(lua_gettop(L) == 1);
+	assert(plua_check_stack(L, 1, PLUA_TNIL) == 0);
 
-	return 0;
+	return 1;
 }
 
 static void plua_config_device_gc(void *ptr) {
@@ -235,7 +237,10 @@ int plua_config_device(lua_State *L) {
 
 	if(devices_select(0, (char *)name, NULL) != 0) {
 		lua_pushnil(L);
-		return 0;
+
+		assert(plua_check_stack(L, 1, PLUA_TNIL) == 0);
+
+		return 1;
 	}
 
 	struct plua_device_t *dev = MALLOC(sizeof(struct plua_device_t));
@@ -304,7 +309,7 @@ int plua_config_device(lua_State *L) {
 
 	plua_gc_reg(L, (void *)dev, plua_config_device_gc);
 
-	assert(lua_gettop(L) == 1);
+	assert(plua_check_stack(L, 1, PLUA_TTABLE) == 0);
 
 	return 1;
 }

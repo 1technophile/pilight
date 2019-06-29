@@ -155,6 +155,22 @@ int plua_metatable_get_boolean(struct plua_metatable_t *table, char *a, int *b) 
 	return -1;
 }
 
+int plua_metatable_get_table(struct plua_metatable_t *table, char *a, struct plua_metatable_t **b) {
+	struct varcont_t val;
+	char *tmp = STRDUP(a);
+	if(tmp == NULL) {
+		OUT_OF_MEMORY
+	}
+
+	if(plua_metatable_get(table, tmp, &val) == LUA_TTABLE) {
+		*b = val.void_;
+		FREE(tmp);
+		return 0;
+	}
+	FREE(tmp);
+	return -1;
+}
+
 int plua_metatable_set(struct plua_metatable_t *table, char *key, struct varcont_t *val) {
 	char *ptr = strstr(key, ".");
 	unsigned int pos = ptr-key;
@@ -387,12 +403,12 @@ void plua_metatable_init(struct plua_metatable_t **table) {
 
 int plua_table(struct lua_State *L) {
 	if(lua_gettop(L) != 0) {
-		luaL_error(L, "table requires 0 arguments, %d given", lua_gettop(L));
-		return 0;
+		pluaL_error(L, "table requires 0 arguments, %d given", lua_gettop(L));
 	}
 
 	struct lua_state_t *state = plua_get_current_state(L);
 	if(state == NULL) {
+		assert(plua_check_stack(L, 0) == 0);
 		return 0;
 	}
 
@@ -403,7 +419,7 @@ int plua_table(struct lua_State *L) {
 
 	plua_gc_reg(L, table, plua_table_gc);
 
-	lua_assert(lua_gettop(L) == 1);
+	assert(plua_check_stack(L, 1, PLUA_TTABLE) == 0);
 
 	return 1;
 }

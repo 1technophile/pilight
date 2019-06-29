@@ -29,7 +29,7 @@
 
 int plua_common_random(struct lua_State *L) {
 	if(lua_gettop(L) != 2) {
-		luaL_error(L, "random requires 2 arguments, %d given", lua_gettop(L));
+		pluaL_error(L, "random requires 2 arguments, %d given", lua_gettop(L));
 	}
 
 	char buf[128] = { '\0' }, *p = buf;
@@ -63,14 +63,14 @@ int plua_common_random(struct lua_State *L) {
 
 	lua_pushnumber(L, r);
 
-	assert(lua_gettop(L) == 1);
+	assert(plua_check_stack(L, 1, PLUA_TNUMBER) == 0);
 
 	return 1;
 }
 
 int plua_common_explode(struct lua_State *L) {
 	if(lua_gettop(L) != 2) {
-		luaL_error(L, "explode requires 2 arguments, %d given", lua_gettop(L));
+		pluaL_error(L, "explode requires 2 arguments, %d given", lua_gettop(L));
 	}
 
 	char **array = NULL;
@@ -111,7 +111,7 @@ int plua_common_explode(struct lua_State *L) {
 	}
 	array_free(&array, n);
 
-	assert(lua_gettop(L) == 1);
+	assert(plua_check_stack(L, 1, PLUA_TTABLE) == 0);
 
 	return 1;
 }
