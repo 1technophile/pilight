@@ -127,8 +127,9 @@ static int call(struct lua_State *L, char *file, char *func) {
 		return -1;
 	}
 
-	if(plua_pcall(L, file, 0, 0) == -1) {
-		assert(plua_check_stack(L, 0) == 0);
+	if(lua_pcall(L, 0, 0, 0) == LUA_ERRRUN) {
+		logprintf(LOG_ERR, "%s", lua_tostring(L,  -1));
+		lua_pop(L, 1);
 		return -1;
 	}
 
@@ -176,10 +177,7 @@ static void test_lua_async_thread_missing_parameters(CuTest *tc) {
 	CuAssertIntEquals(tc, 1, luaL_dostring(state->L, "local thread = pilight.async.thread(); thread.trigger();"));
 	CuAssertIntEquals(tc, 1, luaL_dostring(state->L, "local thread = pilight.async.thread(); thread.trigger(\"foo\");"));
 
-	while(lua_gettop(state->L) > 0) {
-		lua_remove(state->L, -1);
-	}
-	plua_clear_state(state);
+	uv_mutex_unlock(&state->lock);
 
 	uv_run(uv_default_loop(), UV_RUN_NOWAIT);
 	uv_walk(uv_default_loop(), walk_cb, NULL);
@@ -232,7 +230,7 @@ static void test_lua_async_thread(CuTest *tc) {
 
 	CuAssertIntEquals(tc, 0, plua_module_exists("thread", UNITTEST));
 
-	plua_clear_state(state);
+	uv_mutex_unlock(&state->lock);
 
 	if((timer_req = MALLOC(sizeof(uv_timer_t))) == NULL) {
 		OUT_OF_MEMORY /*LCOV_EXCL_LINE*/
@@ -265,7 +263,7 @@ static void test_lua_async_thread(CuTest *tc) {
 
 	lua_pop(L, -1);
 
-	plua_clear_state(state);
+	uv_mutex_unlock(&state->lock);
 
 	uv_run(uv_default_loop(), UV_RUN_DEFAULT);
 	uv_walk(uv_default_loop(), walk_cb, NULL);
@@ -318,7 +316,7 @@ static void test_lua_async_thread_nonexisting_callback(CuTest *tc) {
 
 	CuAssertIntEquals(tc, 0, plua_module_exists("thread", UNITTEST));
 
-	plua_clear_state(state);
+	uv_mutex_unlock(&state->lock);
 
 	if((timer_req = MALLOC(sizeof(uv_timer_t))) == NULL) {
 		OUT_OF_MEMORY /*LCOV_EXCL_LINE*/
@@ -351,7 +349,7 @@ static void test_lua_async_thread_nonexisting_callback(CuTest *tc) {
 
 	lua_pop(L, -1);
 
-	plua_clear_state(state);
+	uv_mutex_unlock(&state->lock);
 
 	uv_run(uv_default_loop(), UV_RUN_DEFAULT);
 	uv_walk(uv_default_loop(), walk_cb, NULL);

@@ -14,11 +14,7 @@ local M = {}
 function M.timer(timer)
 	local config = pilight.config();
 	local data = config.getData();
-	local port = lookup(data , 'hardware', '433nano', 'comport') or nil;
-
-	if port == nil then
-		return;
-	end
+	local port = data['hardware']['433nano']['comport'];
 
 	local serial = pilight.io.serial(port);
 	if serial.open() == false then
@@ -215,23 +211,14 @@ function M.validate()
 	local config = pilight.config();
 	local data = config.getData();
 	local obj = nil;
-	local settings = lookup(data, 'hardware', '433nano') or nil;
 
-	if settings == nil then
-		return;
-	end
-
-	for x in pairs(settings) do
+	for x in pairs(data['hardware']['433nano']) do
 		if x ~= 'comport' then
 			error(x .. "is an unknown parameter")
 		end
 	end
 
-	local port = lookup(data, 'hardware', '433nano', 'comport') or nil;
-
-	if port == nil then
-		error("comport parameter is missing");
-	end
+	local port = data['hardware']['433nano']['comport'];
 
 	file = pilight.io.file(port);
 
@@ -249,11 +236,7 @@ function M.run()
 	local config = pilight.config();
 	local data = config.getData();
 	local obj = nil;
-	local port = lookup(data, 'hardware', '433nano', 'comport') or nil;
-
-	if port == nil then
-		error("comport parameter is missing");
-	end
+	local port = data['hardware']['433nano']['comport'];
 
 	local serial = pilight.io.serial(port);
 	serial.setBaudrate(57600);

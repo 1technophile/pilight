@@ -10,7 +10,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
-#include <assert.h>
 #include <sys/time.h>
 
 #include <wiringx.h>
@@ -136,8 +135,9 @@ static int call(struct lua_State *L, char *file, char *func) {
 		return -1;
 	}
 
-	if(plua_pcall(L, file, 0, 0) == -1) {
-		assert(plua_check_stack(L, 0) == 0);
+	if(lua_pcall(L, 0, 0, 0) == LUA_ERRRUN) {
+		logprintf(LOG_ERR, "%s", lua_tostring(L,  -1));
+		lua_pop(L, 1);
 		return -1;
 	}
 
@@ -372,7 +372,7 @@ void test_lua_hardware_433gpio_send(CuTest *tc) {
 
 	lua_pop(L, -1);
 
-	plua_clear_state(state);
+	uv_mutex_unlock(&state->lock);
 
 	uv_run(uv_default_loop(), UV_RUN_DEFAULT);
 	uv_walk(uv_default_loop(), walk_cb, NULL);

@@ -37,11 +37,11 @@ static int plua_config_set_data(lua_State *L) {
 	// struct plua_metatable_t *cpy = NULL;
 
 	if(lua_gettop(L) != 1) {
-		pluaL_error(L, "config.setData requires 1 argument, %d given", lua_gettop(L));
+		luaL_error(L, "config.setData requires 1 argument, %d given", lua_gettop(L));
 	}
 
 	// if(thread == NULL) {
-		// pluaL_error(L, "internal error: thread object not passed");
+		// luaL_error(L, "internal error: thread object not passed");
 	// }
 
 	char buf[128] = { '\0' }, *p = buf;
@@ -58,8 +58,8 @@ static int plua_config_set_data(lua_State *L) {
 		// lua_remove(L, -1);
 		// plua_metatable_clone(&cpy, &thread->table);
 
-		// printf("-- plua_ret_true --\n");
-		return 0;
+		// plua_ret_true(L);
+		return 1;
 	}
 
 	if(lua_type(L, -1) == LUA_TTABLE) {
@@ -71,27 +71,25 @@ static int plua_config_set_data(lua_State *L) {
 			lua_pop(L, 1);
 		}
 
-		lua_pushboolean(L, 1);
-		assert(plua_check_stack(L, 1, PLUA_TBOOLEAN) == 0);
+		plua_ret_true(L);
 		return 1;
 	}
 
-	lua_pushboolean(L, 0);
-	assert(plua_check_stack(L, 1, PLUA_TBOOLEAN) == 0);
+	plua_ret_false(L);
 
-	return 1;
+	return 0;
 }
 
 static int plua_config_get_data(lua_State *L) {
 	// struct lua_timer_t *timer = (void *)lua_topointer(L, lua_upvalueindex(1));
 
 	if(lua_gettop(L) != 0) {
-		pluaL_error(L, "config.getData requires 0 argument, %d given", lua_gettop(L));
+		luaL_error(L, "config.getData requires 0 argument, %d given", lua_gettop(L));
 		return 0;
 	}
 
 	// if(timer == NULL) {
-		// pluaL_error(L, "internal error: config object not passed");
+		// luaL_error(L, "internal error: config object not passed");
 		// return 0;
 	// }
 
@@ -99,13 +97,13 @@ static int plua_config_get_data(lua_State *L) {
 
 	if(table == NULL) {
 		lua_pushnil(L);
-		assert(plua_check_stack(L, 1, PLUA_TNIL) == 0);
+		assert(lua_gettop(L) == 1);
 		return 1;
 	}
 
 	plua_metatable_push(L, table);
 
-	assert(plua_check_stack(L, 1, PLUA_TTABLE) == 0);
+	assert(lua_gettop(L) == 1);
 
 	return 1;
 }
@@ -161,7 +159,7 @@ static void plua_config_object(lua_State *L, void *foo) {
 
 int plua_config(struct lua_State *L) {
 	if(lua_gettop(L) != 0) {
-		pluaL_error(L, "config requires 0 arguments, %d given", lua_gettop(L));
+		luaL_error(L, "config requires 0 arguments, %d given", lua_gettop(L));
 		return 0;
 	}
 
@@ -172,7 +170,7 @@ int plua_config(struct lua_State *L) {
 
 	plua_config_object(L, NULL);
 
-	assert(plua_check_stack(L, 1, PLUA_TTABLE) == 0);
+	lua_assert(lua_gettop(L) == 1);
 
 	return 1;
 }

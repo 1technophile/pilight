@@ -54,22 +54,17 @@ CuSuite *suite_webserver(void);
 CuSuite *suite_webserver_rest(void);
 #endif
 CuSuite *suite_socket(void);
-CuSuite *suite_coap(void);
-CuSuite *suite_mdns(void);
 CuSuite *suite_log(void);
-CuSuite *suite_lua_panic(void);
 CuSuite *suite_lua_log(void);
 CuSuite *suite_lua_cast(void);
 CuSuite *suite_lua_datetime(void);
 CuSuite *suite_lua_c_metatable(void);
-CuSuite *suite_metatable_to_json(void);
 CuSuite *suite_lua_common(void);
 CuSuite *suite_lua_async_thread(void);
 CuSuite *suite_lua_async_timer(void);
 CuSuite *suite_lua_async_event(void);
 CuSuite *suite_lua_network_mail(void);
 CuSuite *suite_lua_network_http(void);
-CuSuite *suite_lua_network_coap(void);
 CuSuite *suite_lua_io(void);
 CuSuite *suite_lua_config(void);
 CuSuite *suite_protocols_433(void);
@@ -206,13 +201,9 @@ int RunAllTests(void) {
 	suites[nr++] = suite_arp();
 	suites[nr++] = suite_http(); // ipv4 ported / ipv6 not ported
 	suites[nr++] = suite_mail(); // ipv4 ported / ipv6 not ported
-	suites[nr++] = suite_coap();
-	suites[nr++] = suite_mdns();
-	// suites[nr++] = suite_lua_panic(); // Ported
 	suites[nr++] = suite_lua_log(); // Ported
 	suites[nr++] = suite_lua_cast(); // Ported
 	suites[nr++] = suite_lua_c_metatable(); // Ported
-	suites[nr++] = suite_metatable_to_json(); // Ported
 	suites[nr++] = suite_lua_datetime(); // Ported
 	suites[nr++] = suite_lua_common(); // Ported
 	suites[nr++] = suite_lua_async_thread(); // Ported
@@ -220,7 +211,6 @@ int RunAllTests(void) {
 	suites[nr++] = suite_lua_async_event(); // Ported
 	suites[nr++] = suite_lua_network_mail(); // Ported
 	suites[nr++] = suite_lua_network_http();
-	suites[nr++] = suite_lua_network_coap();
 	suites[nr++] = suite_lua_io();
 	suites[nr++] = suite_lua_config(); // Ported
 #ifdef WEBSERVER

@@ -73,6 +73,7 @@ static void test(void *param) {
 		pilight.log(LOG_INFO, \"lua test\");\
 		pilight.log(LOG_DEBUG, \"lua test\");\
 	");
+	plua_stack_dump(state->L);
 	CuAssertIntEquals(gtc, 0, ret);
 
 	plua_clear_state(state);

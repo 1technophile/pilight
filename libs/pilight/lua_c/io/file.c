@@ -68,16 +68,16 @@ static int plua_io_file_exists(struct lua_State *L) {
 	struct lua_file_t *file = (void *)lua_topointer(L, lua_upvalueindex(1));
 
 	if(lua_gettop(L) != 0) {
-		pluaL_error(L, "file.exists requires 0 arguments, %d given", lua_gettop(L));
+		luaL_error(L, "file.exists requires 0 arguments, %d given", lua_gettop(L));
 		return 0;
 	}
 
 	if(file == NULL) {
-		pluaL_error(L, "internal error: file object not passed");
+		luaL_error(L, "internal error: file object not passed");
 	}
 
 	if(file->file == NULL) {
-		pluaL_error(L, "file.exists: file has not been opened");
+		luaL_error(L, "file.exists: file has not been opened");
 	}
 
 	if(file_exists(file->file) == 0) {
@@ -86,7 +86,7 @@ static int plua_io_file_exists(struct lua_State *L) {
 		lua_pushboolean(L, 0);
 	}
 
-	assert(plua_check_stack(L, 1, PLUA_TBOOLEAN) == 0);
+	assert(lua_gettop(L) == 1);
 
 	return 1;
 }
@@ -95,19 +95,20 @@ static int plua_io_file_close(struct lua_State *L) {
 	struct lua_file_t *file = (void *)lua_topointer(L, lua_upvalueindex(1));
 
 	if(lua_gettop(L) != 0) {
-		pluaL_error(L, "file.close requires 0 arguments, %d given", lua_gettop(L));
+		luaL_error(L, "file.close requires 0 arguments, %d given", lua_gettop(L));
+		return 0;
 	}
 
 	if(file == NULL) {
-		pluaL_error(L, "internal error: file object not passed");
+		luaL_error(L, "internal error: file object not passed");
 	}
 
 	if(file->file == NULL) {
-		pluaL_error(L, "file.close: file has not been set");
+		luaL_error(L, "file.close: file has not been set");
 	}
 
 	if(file->fp == NULL) {
-		pluaL_error(L, "file.close: %s has not been opened", file->file);
+		luaL_error(L, "file.close: %s has not been opened", file->file);
 	}
 
 	plua_gc_unreg(L, file);
@@ -121,7 +122,7 @@ static int plua_io_file_close(struct lua_State *L) {
 
 	plua_io_file_gc(file);
 
-	assert(plua_check_stack(L, 1, PLUA_TBOOLEAN) == 0);
+	assert(lua_gettop(L) == 1);
 
 	return 1;
 }
@@ -157,9 +158,7 @@ retry:
 
 	if(ret >= 0 && errno == EINTR) {
 		lua_pushnil(L);
-
-		assert(plua_check_stack(L, 1, PLUA_TNIL) == 0);
-
+		assert(lua_gettop(L) == 1);
 		return 1;
 	} else if((ret == -1 && errno == EINTR) || ret == 0) {
 		goto retry;
@@ -173,7 +172,7 @@ retry:
 	}
 	free(line);
 
-	assert(plua_check_stack(L, 1, PLUA_TNIL | PLUA_TSTRING) == 0);
+	assert(lua_gettop(L) == 1);
 
 	return 1;
 }
@@ -183,19 +182,19 @@ int plua_io_file_readline(struct lua_State *L) {
 	char list[6][3] = { "r", "r+", "a", "a+" };
 
 	if(lua_gettop(L) != 0) {
-		pluaL_error(L, "file.readline requires 0 arguments, %d given", lua_gettop(L));
+		luaL_error(L, "file.readline requires 0 arguments, %d given", lua_gettop(L));
 	}
 
 	if(file == NULL) {
-		pluaL_error(L, "internal error: file object not passed");
+		luaL_error(L, "internal error: file object not passed");
 	}
 
 	if(file->file == NULL) {
-		pluaL_error(L, "file.close: file has not been set");
+		luaL_error(L, "file.close: file has not been set");
 	}
 
 	if(file->fp == NULL) {
-		pluaL_error(L, "file.close: %s has not been opened", file->file);
+		luaL_error(L, "file.close: %s has not been opened", file->file);
 	}
 
 	int i = 0, match = 0;
@@ -206,14 +205,12 @@ int plua_io_file_readline(struct lua_State *L) {
 		}
 	}
 	if(match == 0) {
-		pluaL_error(L, "file.readline: %s has not been opened for reading", file->file);
+		luaL_error(L, "file.readline: %s has not been opened for reading", file->file);
 	}
 
 	lua_pushcfunction(L, plua_io_file_readline_iter);
 	lua_pushlightuserdata(L, file);
 	lua_pushnil(L);
-
-	assert(plua_check_stack(L, 3, PLUA_TFUNCTION, PLUA_TLIGHTUSERDATA, PLUA_TNIL) == 0);
 
 	return 3;
 }
@@ -224,19 +221,19 @@ static int plua_io_file_write(lua_State *L) {
 	char *content = NULL;
 
 	if(lua_gettop(L) != 1) {
-		pluaL_error(L, "file.write requires 1 argument, %d given", lua_gettop(L));
+		luaL_error(L, "file.write requires 1 argument, %d given", lua_gettop(L));
 	}
 
 	if(file == NULL) {
-		pluaL_error(L, "internal error: file object not passed");
+		luaL_error(L, "internal error: file object not passed");
 	}
 
 	if(file->file == NULL) {
-		pluaL_error(L, "file.close: file has not been set");
+		luaL_error(L, "file.close: file has not been set");
 	}
 
 	if(file->fp == NULL) {
-		pluaL_error(L, "file.close: %s has not been opened", file->file);
+		luaL_error(L, "file.close: %s has not been opened", file->file);
 	}
 
 	int i = 0, match = 0;
@@ -247,7 +244,7 @@ static int plua_io_file_write(lua_State *L) {
 		}
 	}
 	if(match == 0) {
-		pluaL_error(L, "file.write: %s has not been opened for writing", file->file);
+		luaL_error(L, "file.write: %s has not been opened for writing", file->file);
 	}
 
 	char buf[128] = { '\0' }, *p = buf;
@@ -269,7 +266,7 @@ static int plua_io_file_write(lua_State *L) {
 		lua_pushboolean(L, 0);
 	}
 
-	assert(plua_check_stack(L, 1, PLUA_TBOOLEAN) == 0);
+	assert(lua_gettop(L) == 1);
 
 	return 1;
 }
@@ -281,19 +278,19 @@ static int plua_io_file_read(lua_State *L) {
 	int size = 1024;
 
 	if(lua_gettop(L) > 1 && lua_gettop(L) < 0) {
-		pluaL_error(L, "file.read requires 0 or 1 arguments, %d given", lua_gettop(L));
+		luaL_error(L, "file.read requires 0 or 1 arguments, %d given", lua_gettop(L));
 	}
 
 	if(file == NULL) {
-		pluaL_error(L, "internal error: file object not passed");
+		luaL_error(L, "internal error: file object not passed");
 	}
 
 	if(file->file == NULL) {
-		pluaL_error(L, "file.close: file has not been set");
+		luaL_error(L, "file.close: file has not been set");
 	}
 
 	if(file->fp == NULL) {
-		pluaL_error(L, "file.close: %s has not been opened", file->file);
+		luaL_error(L, "file.close: %s has not been opened", file->file);
 	}
 
 	int i = 0, match = 0;
@@ -304,7 +301,7 @@ static int plua_io_file_read(lua_State *L) {
 		}
 	}
 	if(match == 0) {
-		pluaL_error(L, "file.read: %s has not been opened for reading", file->file);
+		luaL_error(L, "file.read: %s has not been opened for reading", file->file);
 	}
 
 	if(lua_gettop(L) == 1) {
@@ -334,7 +331,7 @@ static int plua_io_file_read(lua_State *L) {
 		lua_pushnil(L);
 	}
 
-	assert(plua_check_stack(L, 1, PLUA_TNIL | PLUA_TSTRING) == 0);
+	assert(lua_gettop(L) == 1);
 
 	if(content != buffer) {
 		FREE(content);
@@ -349,11 +346,11 @@ static int plua_io_file_open(lua_State *L) {
 	int nrargs = lua_gettop(L);
 
 	if(nrargs > 1 || nrargs < 0) {
-		pluaL_error(L, "file.open requires 0 or 1 arguments, %d given", lua_gettop(L));
+		luaL_error(L, "file.open requires 0 or 1 arguments, %d given", lua_gettop(L));
 	}
 
 	if(file == NULL) {
-		pluaL_error(L, "internal error: file object not passed");
+		luaL_error(L, "internal error: file object not passed");
 	}
 
 	if(nrargs == 1) {
@@ -387,16 +384,16 @@ static int plua_io_file_open(lua_State *L) {
 		}
 	}
 	if(match == 0) {
-		pluaL_error(L, "file.open: %s is not a valid open mode", mode);
+		luaL_error(L, "file.open: %s is not a valid open mode", mode);
 	}
 
 	if((file->fp = fopen(file->file, file->mode)) == NULL) {
-		pluaL_error(L, "file.open: could not open file \"%s\" with mode \"%s\"", file->file, file->mode);
+		luaL_error(L, "file.open: could not open file \"%s\" with mode \"%s\"", file->file, file->mode);
 	} else {
 		lua_pushboolean(L, 1);
 	}
 
-	assert(plua_check_stack(L, 1, PLUA_TBOOLEAN) == 0);
+	assert(lua_gettop(L) == 1);
 
 	return 1;
 }
@@ -407,19 +404,19 @@ int plua_io_file_seek(struct lua_State *L) {
 	int nrargs = lua_gettop(L), offset = 0;
 
 	if(nrargs > 2 || nrargs <= 0) {
-		pluaL_error(L, "file.seek requires 1 or 2 arguments, %d given", lua_gettop(L));
+		luaL_error(L, "file.seek requires 1 or 2 arguments, %d given", lua_gettop(L));
 	}
 
 	if(file == NULL) {
-		pluaL_error(L, "internal error: file object not passed");
+		luaL_error(L, "internal error: file object not passed");
 	}
 
 	if(file->file == NULL) {
-		pluaL_error(L, "file.close: file has not been set");
+		luaL_error(L, "file.close: file has not been set");
 	}
 
 	if(file->fp == NULL) {
-		pluaL_error(L, "file.close: %s has not been opened", file->file);
+		luaL_error(L, "file.close: %s has not been opened", file->file);
 	}
 
 	if(nrargs == 2) {
@@ -457,7 +454,7 @@ int plua_io_file_seek(struct lua_State *L) {
 	} else if(strcmp(whence, "end") == 0) {
 		x = SEEK_END;
 	} else {
-		pluaL_error(L, "file.seek: %s is not a valid seek mode (set, cur or end)", whence);
+		luaL_error(L, "file.seek: %s is not a valid seek mode (set, cur or end)", whence);
 	}
 	int ret = fseek(file->fp, offset, x);
 
@@ -472,7 +469,7 @@ int plua_io_file_seek(struct lua_State *L) {
 		}
 	}
 
-	assert(plua_check_stack(L, 1, PLUA_TNUMBER | PLUA_TNIL) == 0);
+	assert(lua_gettop(L) == 1);
 
 	return 1;
 }
@@ -518,7 +515,8 @@ static void plua_io_file_object(lua_State *L, struct lua_file_t *file) {
 
 int plua_io_file(struct lua_State *L) {
 	if(lua_gettop(L) != 1) {
-		pluaL_error(L, "file requires 1 argument, %d given", lua_gettop(L));
+		luaL_error(L, "file requires 1 argument, %d given", lua_gettop(L));
+		return 0;
 	}
 
 	char *name = NULL;
@@ -539,7 +537,6 @@ int plua_io_file(struct lua_State *L) {
 
 	struct lua_state_t *state = plua_get_current_state(L);
 	if(state == NULL) {
-		assert(plua_check_stack(L, 0) == 0);
 		return 0;
 	}
 
@@ -562,7 +559,7 @@ int plua_io_file(struct lua_State *L) {
 
 	plua_io_file_object(L, lua_file);
 
-	assert(plua_check_stack(L, 1, PLUA_TTABLE) == 0);
+	lua_assert(lua_gettop(L) == 1);
 
 	return 1;
 }

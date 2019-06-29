@@ -264,11 +264,15 @@ static int call(struct lua_State *L, char *file, char *func) {
 		return -1;
 	}
 
-	if(plua_pcall(L, file, 0, 0) == -1) {
-		assert(plua_check_stack(L, 0) == 0);
+	if(lua_pcall(L, 0, 0, 0) == LUA_ERRRUN) {
+		logprintf(LOG_ERR, "%s", lua_tostring(L,  -1));
+		lua_pop(L, 1);
 		return -1;
 	}
-	return 0;
+
+	lua_pop(L, 1);
+
+	return 1;
 }
 
 static void plua_overwrite_print(void) {
@@ -329,10 +333,7 @@ static void test_lua_network_http_missing_parameters(CuTest *tc) {
 	CuAssertIntEquals(tc, 1, luaL_dostring(state->L, "local http = pilight.network.http(); http.post();"));
 	CuAssertIntEquals(tc, 1, luaL_dostring(state->L, "local http = pilight.network.http(); http.post(\"foo\");"));
 
-	while(lua_gettop(state->L) > 0) {
-		lua_remove(state->L, -1);
-	}
-	plua_clear_state(state);
+	uv_mutex_unlock(&state->lock);
 
 	plua_pause_coverage(0);
 	plua_gc();
@@ -376,7 +377,7 @@ static void test_lua_network_http_get(CuTest *tc) {
 
 	CuAssertIntEquals(tc, 0, plua_module_exists("http", UNITTEST));
 
-	plua_clear_state(state);
+	uv_mutex_unlock(&state->lock);
 
 	if((timer_req = MALLOC(sizeof(uv_timer_t))) == NULL) {
 		OUT_OF_MEMORY /*LCOV_EXCL_LINE*/
@@ -409,11 +410,11 @@ static void test_lua_network_http_get(CuTest *tc) {
 		tmp = tmp->next;
 	}
 	CuAssertPtrNotNull(tc, file);
-	CuAssertIntEquals(tc, 0, call(L, file, "run"));
+	CuAssertIntEquals(tc, 1, call(L, file, "run"));
 
 	lua_pop(L, -1);
 
-	plua_clear_state(state);
+	uv_mutex_unlock(&state->lock);
 
 	uv_run(uv_default_loop(), UV_RUN_DEFAULT);
 	uv_walk(uv_default_loop(), walk_cb, NULL);
@@ -466,7 +467,7 @@ static void test_lua_network_http_post(CuTest *tc) {
 
 	CuAssertIntEquals(tc, 0, plua_module_exists("http", UNITTEST));
 
-	plua_clear_state(state);
+	uv_mutex_unlock(&state->lock);
 
 	if((timer_req = MALLOC(sizeof(uv_timer_t))) == NULL) {
 		OUT_OF_MEMORY /*LCOV_EXCL_LINE*/
@@ -499,11 +500,11 @@ static void test_lua_network_http_post(CuTest *tc) {
 		tmp = tmp->next;
 	}
 	CuAssertPtrNotNull(tc, file);
-	CuAssertIntEquals(tc, 0, call(L, file, "run"));
+	CuAssertIntEquals(tc, 1, call(L, file, "run"));
 
 	lua_pop(L, -1);
 
-	plua_clear_state(state);
+	uv_mutex_unlock(&state->lock);
 
 	uv_run(uv_default_loop(), UV_RUN_DEFAULT);
 	uv_walk(uv_default_loop(), walk_cb, NULL);
@@ -556,7 +557,7 @@ static void test_lua_network_http_nonexisting_callback(CuTest *tc) {
 
 	CuAssertIntEquals(tc, 0, plua_module_exists("http", UNITTEST));
 
-	plua_clear_state(state);
+	uv_mutex_unlock(&state->lock);
 
 	if((timer_req = MALLOC(sizeof(uv_timer_t))) == NULL) {
 		OUT_OF_MEMORY /*LCOV_EXCL_LINE*/
@@ -589,7 +590,7 @@ static void test_lua_network_http_nonexisting_callback(CuTest *tc) {
 
 	lua_pop(L, -1);
 
-	plua_clear_state(state);
+	uv_mutex_unlock(&state->lock);
 
 	uv_run(uv_default_loop(), UV_RUN_DEFAULT);
 	uv_walk(uv_default_loop(), walk_cb, NULL);

@@ -24,11 +24,7 @@ function M.send(obj, reason, data)
 		local config = pilight.config();
 		local data1 = config.getData();
 		local platform = config.getSetting("gpio-platform");
-		local sender = lookup(data1, 'hardware', '433gpio', 'sender') or nil;
-
-		if sender == nil then
-			error("sender parameter missing");
-		end
+		local sender = data1['hardware']['433gpio']['sender'];
 
 		local wx = wiringX.setup(platform);
 
@@ -112,13 +108,7 @@ function M.validate()
 	local data = config.getData();
 	local obj = nil;
 
-	local settings = lookup(data, 'hardware', '433gpio') or nil;
-
-	if settings == nil then
-		return;
-	end
-
-	for x in pairs(settings) do
+	for x in pairs(data['hardware']['433gpio']) do
 		if x ~= 'sender' and x ~= 'receiver' then
 			error(x .. "is an unknown parameter")
 		end
@@ -192,12 +182,8 @@ function M.run()
 	local data = config.getData();
 	local obj = nil;
 
-	local receiver = lookup(data, 'hardware', '433gpio', 'receiver') or nil;
-	local sender = lookup(data, 'hardware', '433gpio', 'sender') or nil;
-
-	if platform == nil or sender == nil or receiver == nil then
-		return;
-	end
+	local receiver = data['hardware']['433gpio']['receiver'];
+	local sender = data['hardware']['433gpio']['sender'];
 
 	obj = wiringX.setup(platform);
 	obj.pinMode(sender, wiringX.PINMODE_OUTPUT);

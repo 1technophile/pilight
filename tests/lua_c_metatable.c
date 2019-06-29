@@ -453,8 +453,7 @@ static void test_lua_c_metatable(CuTest *tc) {
 		thread.setUserdata(thread1.getUserdata()()); \
 	"));
 
-	lua_remove(state->L, -1);
-	plua_clear_state(state);
+	uv_mutex_unlock(&state->lock);
 
 	uv_run(uv_default_loop(), UV_RUN_NOWAIT);
 	uv_walk(uv_default_loop(), walk_cb, NULL);
@@ -504,7 +503,7 @@ static void test_c_lua_metatable(CuTest *tc) {
 
 		plua_metatable_push(state->L, table);
 		lua_setglobal(state->L, "_table");
-		plua_pcall(state->L, __FILE__, 0, LUA_MULTRET);
+		lua_pcall(state->L, 0, LUA_MULTRET, 0);
 		plua_metatable_free(table);
 	}
 
@@ -521,7 +520,7 @@ static void test_c_lua_metatable(CuTest *tc) {
 
 		plua_metatable_push(state->L, table);
 		lua_setglobal(state->L, "_table");
-		plua_pcall(state->L, __FILE__, 0, LUA_MULTRET);
+		lua_pcall(state->L, 0, LUA_MULTRET, 0);
 		plua_metatable_free(table);
 	}
 
@@ -538,7 +537,7 @@ static void test_c_lua_metatable(CuTest *tc) {
 
 		plua_metatable_push(state->L, table);
 		lua_setglobal(state->L, "_table");
-		plua_pcall(state->L, __FILE__, 0, LUA_MULTRET);
+		lua_pcall(state->L, 0, LUA_MULTRET, 0);
 		plua_metatable_free(table);
 	}
 
@@ -562,7 +561,7 @@ static void test_c_lua_metatable(CuTest *tc) {
 
 		plua_metatable_push(state->L, table);
 		lua_setglobal(state->L, "_table");
-		plua_pcall(state->L, __FILE__, 0, LUA_MULTRET);
+		lua_pcall(state->L, 0, LUA_MULTRET, 0);
 		plua_metatable_free(table);
 	}
 
@@ -600,7 +599,7 @@ static void test_c_lua_metatable(CuTest *tc) {
 
 		plua_metatable_push(state->L, table);
 		lua_setglobal(state->L, "_table");
-		plua_pcall(state->L, __FILE__, 0, LUA_MULTRET);
+		lua_pcall(state->L, 0, LUA_MULTRET, 0);
 		plua_metatable_free(table);
 	}
 
@@ -626,7 +625,7 @@ static void test_c_lua_metatable(CuTest *tc) {
 			return table(); \
 		");
 
-		plua_pcall(state->L, __FILE__, 0, 1);
+		lua_pcall(state->L, 0, 1, 0);
 
 		struct plua_metatable_t *table = NULL, *cpy = NULL;
 
@@ -675,7 +674,7 @@ static void test_c_lua_metatable(CuTest *tc) {
 		plua_metatable_free(table);
 	}
 
-	plua_clear_state(state);
+	uv_mutex_unlock(&state->lock);
 
 	uv_run(uv_default_loop(), UV_RUN_NOWAIT);
 	uv_walk(uv_default_loop(), walk_cb, NULL);

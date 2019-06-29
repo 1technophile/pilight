@@ -131,11 +131,12 @@ static int plua_io_spi_rw(struct lua_State *L) {
 	struct lua_spi_t *spi = (void *)lua_topointer(L, lua_upvalueindex(1));
 
 	if(lua_gettop(L) != 1) {
-		pluaL_error(L, "spi.rw requires 1 argument, %d given", lua_gettop(L));
+		luaL_error(L, "spi.rw requires 1 argument, %d given", lua_gettop(L));
+		return 0;
 	}
 
 	if(spi == NULL) {
-		pluaL_error(L, "internal error: spi object not passed");
+		luaL_error(L, "internal error: spi object not passed");
 	}
 
 	uint8_t *tmp = NULL;
@@ -156,7 +157,7 @@ static int plua_io_spi_rw(struct lua_State *L) {
 			while(lua_next(L, -2) != 0) {
 				if(lua_type(L, -2) != LUA_TNUMBER || lua_type(L, -1) != LUA_TNUMBER) {
 					lua_pop(L, 3);
-					pluaL_error(L, "spi.rw table should contain both nummeric keys and values", lua_gettop(L));
+					luaL_error(L, "spi.rw table should contain both nummeric keys and values", lua_gettop(L));
 				}
 
 				if((tmp = REALLOC(tmp, sizeof(uint8_t *)*(nr+1))) == NULL) {
@@ -178,16 +179,12 @@ static int plua_io_spi_rw(struct lua_State *L) {
 	if((rxbuf[0] & 0x80) == 0) { // read
 		lua_pushnumber(L, tmp[1]);
 		FREE(tmp);
-
-		assert(plua_check_stack(L, 1, PLUA_TNUMBER) == 0);
-
+		assert(lua_gettop(L) == 1);
 		return 1;
 	}
 
 	FREE(tmp);
-
-	assert(plua_check_stack(L, 0) == 0);
-
+	assert(lua_gettop(L) == 0);
 	return 0;
 }
 
@@ -202,7 +199,8 @@ static void plua_io_spi_object(lua_State *L, struct lua_spi_t *spi) {
 
 int plua_io_spi(struct lua_State *L) {
 	if(lua_gettop(L) != 1 && lua_gettop(L) != 2) {
-		pluaL_error(L, "spi requires 1 or 2 arguments, %d given", lua_gettop(L));
+		luaL_error(L, "spi requires 1 or 2 arguments, %d given", lua_gettop(L));
+		return 0;
 	}
 
 	char buf[128] = { '\0' }, *p = buf;
@@ -272,7 +270,7 @@ int plua_io_spi(struct lua_State *L) {
 		logprintf(LOG_ERR, "known SPI channel (%d) is unknown to wiringX", channel);
 		lua_pushnil(L);
 
-		assert(plua_check_stack(L, 1, PLUA_TNIL) == 0);
+		lua_assert(lua_gettop(L) == 1);
 
 		return 1;
 	}
@@ -280,14 +278,11 @@ int plua_io_spi(struct lua_State *L) {
 	if(match == 0) {
 		if(wiringXSPISetup(channel, speed) == -1) {
 			lua_pushnil(L);
-
-			assert(plua_check_stack(L, 1, PLUA_TNIL) == 0);
-
+			lua_assert(lua_gettop(L) == 1);
 			return 1;
 		} else {
 			struct lua_state_t *state = plua_get_current_state(L);
 			if(state == NULL) {
-				assert(plua_check_stack(L, 0) == 0);
 				return 0;
 			}
 
@@ -334,7 +329,7 @@ int plua_io_spi(struct lua_State *L) {
 		plua_gc_reg(NULL, NULL, plua_io_spi_global_gc);
 	}
 
-	assert(plua_check_stack(L, 1, PLUA_TTABLE) == 0);
+	lua_assert(lua_gettop(L) == 1);
 
 	return 1;
 }

@@ -55,15 +55,16 @@ static int plua_io_dir_exists(struct lua_State *L) {
 	struct lua_dir_t *dir = (void *)lua_topointer(L, lua_upvalueindex(1));
 
 	if(lua_gettop(L) != 0) {
-		pluaL_error(L, "dir.exists requires 0 arguments, %d given", lua_gettop(L));
+		luaL_error(L, "dir.exists requires 0 arguments, %d given", lua_gettop(L));
+		return 0;
 	}
 
 	if(dir == NULL) {
-		pluaL_error(L, "internal error: dir object not passed");
+		luaL_error(L, "internal error: dir object not passed");
 	}
 
 	if(dir->dir == NULL) {
-		pluaL_error(L, "dir.exists: dir has not been set");
+		luaL_error(L, "dir.exists: dir has not been set");
 	}
 
 	struct stat s;
@@ -83,7 +84,7 @@ static int plua_io_dir_exists(struct lua_State *L) {
     }
 	}
 
-	assert(plua_check_stack(L, 1, PLUA_TBOOLEAN) == 0);
+	assert(lua_gettop(L) == 1);
 
 	return 1;
 }
@@ -93,16 +94,16 @@ static int plua_io_dir_close(struct lua_State *L) {
 	struct lua_dir_t *dir = (void *)lua_topointer(L, lua_upvalueindex(1));
 
 	if(lua_gettop(L) != 0) {
-		pluaL_error(L, "dir.close requires 0 arguments, %d given", lua_gettop(L));
+		luaL_error(L, "dir.close requires 0 arguments, %d given", lua_gettop(L));
 		return 0;
 	}
 
 	if(dir == NULL) {
-		pluaL_error(L, "internal error: dir object not passed");
+		luaL_error(L, "internal error: dir object not passed");
 	}
 
 	if(dir->dir == NULL) {
-		pluaL_error(L, "dir.close: dir has not been set");
+		luaL_error(L, "dir.close: dir has not been set");
 	}
 
 	plua_gc_unreg(L, dir);
@@ -110,8 +111,7 @@ static int plua_io_dir_close(struct lua_State *L) {
 	plua_io_dir_gc(dir);
 
 	lua_pushboolean(L, 1);
-
-	assert(plua_check_stack(L, 1, PLUA_TBOOLEAN) == 0);
+	assert(lua_gettop(L) == 1);
 
 	return 1;
 }
@@ -132,7 +132,8 @@ static void plua_io_dir_object(lua_State *L, struct lua_dir_t *dir) {
 
 int plua_io_dir(struct lua_State *L) {
 	if(lua_gettop(L) != 1) {
-		pluaL_error(L, "dir requires 1 argument, %d given", lua_gettop(L));
+		luaL_error(L, "dir requires 1 argument, %d given", lua_gettop(L));
+		return 0;
 	}
 
 	char *name = NULL;
@@ -175,7 +176,7 @@ int plua_io_dir(struct lua_State *L) {
 
 	plua_io_dir_object(L, lua_dir);
 
-	assert(plua_check_stack(L, 1, PLUA_TTABLE) == 0);
+	lua_assert(lua_gettop(L) == 1);
 
 	return 1;
 }

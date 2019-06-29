@@ -16,7 +16,6 @@
 #include <time.h>
 #include <limits.h>
 #include <assert.h>
-#include <setjmp.h>
 
 #ifndef _WIN32
 	#include <libgen.h>
@@ -123,8 +122,6 @@ void plua_stack_dump(lua_State *L) {
  */
 static int pairsmeta (lua_State *L, const char *method, int iszero,
                       lua_CFunction iter) {
-  struct lua_state_t *state = plua_get_current_state(L);
-
   if (!luaL_getmetafield(L, 1, method)) {  /* no metamethod? */
     luaL_checktype(L, 1, LUA_TTABLE);  /* argument must be a table */
     lua_pushcfunction(L, iter);  /* will return generator, */
@@ -134,7 +131,7 @@ static int pairsmeta (lua_State *L, const char *method, int iszero,
   }
   else {
     lua_pushvalue(L, 1);  /* argument 'self' to metamethod */
-    plua_pcall(L, state->module->file, 1, 3); /* get 3 values from metamethod */
+    lua_call(L, 1, 3);  /* get 3 values from metamethod */
   }
   return 3;
 }
@@ -142,7 +139,6 @@ static int pairsmeta (lua_State *L, const char *method, int iszero,
 static int luaB_next (lua_State *L) {
   luaL_checktype(L, 1, LUA_TTABLE);
   lua_settop(L, 2);  /* create a 2nd argument if there isn't one */
-
   if (lua_next(L, 1))
     return 2;
   else {
@@ -170,12 +166,10 @@ static int luaB_ipairs (lua_State *L) {
 
 int plua_namespace(struct plua_module_t *module, char *p) {
 	switch(module->type) {
-#ifdef PILIGHT_UNITTEST
 		case UNITTEST: {
 			sprintf(p, "unittest.%s", module->name);
 			return 0;
 		} break;
-#endif
 		case FUNCTION: {
 			sprintf(p, "function.%s", module->name);
 			return 0;
@@ -215,7 +209,6 @@ struct lua_state_t *plua_get_module(lua_State *L, char *namespace, char *module)
 	}
 
 	if((L = state->L) == NULL) {
-		assert(plua_check_stack(L, 0) == 0);
 		plua_clear_state(state);
 		return NULL;
 	}
@@ -228,7 +221,7 @@ struct lua_state_t *plua_get_module(lua_State *L, char *namespace, char *module)
 
 	if(lua_isnil(L, -1) != 0) {
 		lua_pop(L, -1);
-		assert(plua_check_stack(L, 0) == 0);
+		assert(lua_gettop(L) == 0);
 		plua_clear_state(state);
 		return NULL;
 	}
@@ -249,7 +242,7 @@ struct lua_state_t *plua_get_module(lua_State *L, char *namespace, char *module)
 
 	lua_pop(L, -1);
 
-	assert(plua_check_stack(L, 0) == 0);
+	assert(lua_gettop(L) == 0);
 	plua_clear_state(state);
 
 	return NULL;
@@ -523,7 +516,6 @@ static int plua_metatable_next(lua_State *L, struct plua_metatable_t *node) {
 	uv_mutex_lock(&node->lock);
 
 	int iter = node->iter[state->idx]++;
-
 	if(node->nrvar > iter) {
 		switch(node->table[iter].key.type_) {
 			case LUA_TNUMBER: {
@@ -805,7 +797,12 @@ void plua_metatable_parse_set(lua_State *L, void *data) {
 					if((is_metatable = lua_getmetatable(L, -1)) == 1) {
 						lua_remove(L, -1);
 						if(luaL_getmetafield(L, -1, "__call")) {
-							if(plua_pcall(L, __FILE__, 1, 1) == 0) {
+							if(lua_pcall(L, 1, 1, 0) == LUA_ERRRUN) {
+								if(lua_type(L, -1) == LUA_TSTRING) {
+									logprintf(LOG_ERR, "%s", lua_tostring(L, -1));
+									lua_remove(L, -1);
+								}
+							} else {
 								if(lua_type(L, -1) == LUA_TLIGHTUSERDATA) {
 									struct plua_metatable_t *table = lua_touserdata(L, -1);
 									plua_metatable_clone(&table, (struct plua_metatable_t **)&node->table[x].val.void_);
@@ -904,7 +901,12 @@ void plua_metatable_parse_set(lua_State *L, void *data) {
 					if((is_metatable = lua_getmetatable(L, -1)) == 1) {
 						lua_remove(L, -1);
 						if(luaL_getmetafield(L, -1, "__call")) {
-							if(plua_pcall(L, __FILE__, 1, 1) == 0) {
+							if(lua_pcall(L, 1, 1, 0) == LUA_ERRRUN) {
+								if(lua_type(L, -1) == LUA_TSTRING) {
+									logprintf(LOG_ERR, "%s", lua_tostring(L, -1));
+									lua_remove(L, -1);
+								}
+							} else {
 								if(lua_type(L, -1) == LUA_TLIGHTUSERDATA) {
 									struct plua_metatable_t *table = lua_touserdata(L, -1);
 									plua_metatable_clone(&table, (struct plua_metatable_t **)&node->table[x].val.void_);
@@ -1004,7 +1006,7 @@ struct lua_state_t *plua_get_current_state(lua_State *L) {
 	return NULL;
 }
 
-void _plua_clear_state(struct lua_state_t *state, char *file, int line) {
+void plua_clear_state(struct lua_state_t *state) {
 	int i = 0;
 	uv_mutex_lock(&state->gc.lock);
 	for(i=0;i<state->gc.nr;i++) {
@@ -1019,16 +1021,10 @@ void _plua_clear_state(struct lua_state_t *state, char *file, int line) {
 	state->gc.nr = 0;
 	state->gc.size = 0;
 
-	state->oldmod = state->module;
-	if(state->oldmod != NULL) {
-		state->oldmod->btfile = file;
-		state->oldmod->btline = line;
-	}
-
 	uv_mutex_unlock(&state->gc.lock);
 
 	if(state->L != NULL) {
-		assert(plua_check_stack(state->L, 0) == 0);
+		assert(lua_gettop(state->L) == 0);
 	}
 
 	uv_mutex_unlock(&state->lock);
@@ -1215,17 +1211,14 @@ static int plua_module_init(struct lua_State *L, char *file, struct plua_module_
 	if(lua_getfield(L, -1, "info") == 0) {
 #endif
 		logprintf(LOG_ERR, "%s: info function missing", file);
-		assert(plua_check_stack(L, 0) == 0);
-		return -1;
+		return 0;
 	}
 
 	char *type = NULL;
 	switch(mod->type) {
-#ifdef PILIGHT_UNITTEST
 		case UNITTEST: {
 			type = STRDUP("unittest");
 		} break;
-#endif
 		case FUNCTION: {
 			type = STRDUP("event function");
 		} break;
@@ -1254,56 +1247,49 @@ static int plua_module_init(struct lua_State *L, char *file, struct plua_module_
 	 *
 	 * stack now contains -1 => function
 	 */
-	assert(plua_check_stack(L, 2, PLUA_TTABLE, PLUA_TFUNCTION) == 0);
-	if(plua_pcall(L, __FILE__, 0, 1) == -1) {
-		assert(plua_check_stack(L, 0) == 0);
-		return -1;
+	if(lua_pcall(L, 0, 1, 0) == LUA_ERRRUN) {
+		if(lua_type(L, -1) != LUA_TSTRING) {
+			logprintf(LOG_ERR, "%s", lua_tostring(L, -1));
+			lua_pop(L, 1);
+			return 0;
+		}
 	}
 
-	lua_remove(L, 1);
-
-	assert(plua_check_stack(L, 1, PLUA_TTABLE) == 0);
 	if(lua_type(L, -1) != LUA_TTABLE) {
 		logprintf(LOG_ERR, "%s: the info function returned %s, table expected", file, lua_typename(L, lua_type(L, -1)));
-		assert(plua_check_stack(L, 0) == 0);
 		FREE(type);
-		return -1;
+		return 0;
 	}
 
 	char *keys[12] = {"name", "version", "reqversion", "reqcommit"};
 	if(plua_table_has_keys(L, keys, 4) == 0) {
 		logprintf(LOG_ERR, "%s: the info table has invalid keys", file);
-		assert(plua_check_stack(L, 0) == 0);
 		FREE(type);
-		return -1;
+		return 0;
 	}
 
 	const char *name = NULL, *version = NULL, *reqversion = NULL, *reqcommit = NULL;
 	if(plua_get_table_string_by_key(L, "name", &name) == 0) {
 		logprintf(LOG_ERR, "%s: the info table 'name' key is missing or invalid", file);
-		assert(plua_check_stack(L, 0) == 0);
 		FREE(type);
-		return -1;
+		return 0;
 	}
 
 	if(plua_get_table_string_by_key(L, "version", &version) == 0) {
 		logprintf(LOG_ERR, "%s: the info table 'version' key is missing or invalid", file);
-		assert(plua_check_stack(L, 0) == 0);
 		FREE(type);
-		return -1;
+		return 0;
 	}
 
 	if(plua_get_table_string_by_key(L, "reqversion", &reqversion) == 0) {
 		logprintf(LOG_ERR, "%s: the info table 'reqversion' key is missing or invalid", file);
-		assert(plua_check_stack(L, 0) == 0);
 		FREE(type);
-		return -1;
+		return 0;
 	}
 	if(plua_get_table_string_by_key(L, "reqcommit", &reqcommit) == 0) {
 		logprintf(LOG_ERR, "%s: the info table 'reqcommit' key is missing or invalid", file);
-		assert(plua_check_stack(L, 0) == 0);
 		FREE(type);
-		return -1;
+		return 0;
 	}
 
 	strcpy(mod->name, name);
@@ -1341,9 +1327,8 @@ static int plua_module_init(struct lua_State *L, char *file, struct plua_module_
 		 * The stack now contains: nothing
 		 */
 		lua_pop(L, 1);
-		assert(plua_check_stack(L, 0) == 0);
 		FREE(type);
-		return -1;
+		return 0;
 	}
 
 	/*
@@ -1351,10 +1336,9 @@ static int plua_module_init(struct lua_State *L, char *file, struct plua_module_
 	 *
 	 * The stack now contains: nothing
 	 */
-	lua_remove(L, 1);
-	assert(plua_check_stack(L, 0) == 0);
+	lua_pop(L, 1);
 	FREE(type);
-	return 0;
+	return 1;
 }
 
 static int plua_writer(lua_State *L, const void* p, size_t sz, void* ud) {
@@ -1379,31 +1363,24 @@ void plua_module_load(char *file, int type) {
 
 	if(luaL_loadfile(L, file) != 0) {
 		logprintf(LOG_ERR, "cannot load lua file: %s", file);
-		lua_remove(L, -1);
-		assert(plua_check_stack(L, 0) == 0);
+		lua_pop(L, 1);
 		FREE(module);
 		return;
 	}
 	strcpy(module->file, file);
 	if(lua_dump(L, plua_writer, module) != 0) {
 		logprintf(LOG_ERR, "cannot dump lua file: %s", file);
-		lua_remove(L, -1);
-		assert(plua_check_stack(L, 0) == 0);
+		lua_pop(L, 1);
 		FREE(module->bytecode);
 		FREE(module);
 		return;
 	}
 
-	assert(plua_check_stack(L, 1, PLUA_TFUNCTION) == 0);
-	if(plua_pcall(L, file, 0, LUA_MULTRET) == -1) {
-		assert(plua_check_stack(L, 0) == 0);
-		return;
-	}
+	lua_pcall(L, 0, LUA_MULTRET, 0);
 
-	assert(plua_check_stack(L, 1, PLUA_TTABLE) == 0);
 	if(lua_type(L, -1) != LUA_TTABLE) {
 		logprintf(LOG_ERR, "%s: does not return a table", file);
-		lua_remove(L, -1);
+		lua_pop(L, 1);
 		FREE(module->bytecode);
 		FREE(module);
 		return;
@@ -1411,14 +1388,12 @@ void plua_module_load(char *file, int type) {
 
 	module->type = type;
 	strcpy(module->file, file);
-	if(plua_module_init(L, file, module) != -1) {
+	if(plua_module_init(L, file, module) != 0) {
 		memset(p, '\0', sizeof(name));
 		switch(module->type) {
-#ifdef PILIGHT_UNITTEST
 			case UNITTEST:
 				sprintf(p, "unittest.%s", module->name);
 			break;
-#endif
 			case OPERATOR:
 				sprintf(p, "operator.%s", module->name);
 			break;
@@ -1443,53 +1418,34 @@ void plua_module_load(char *file, int type) {
 	} else {
 		FREE(module->bytecode);
 		FREE(module);
-		assert(plua_check_stack(L, 0) == 0);
 		return;
 	}
-	luaL_loadbuffer(L, module->bytecode, module->size, module->name);
-	assert(plua_check_stack(L, 1, PLUA_TFUNCTION) == 0);
-	if(plua_pcall(L, module->file, 0, LUA_MULTRET) == -1) {
-		assert(plua_check_stack(L, 0) == 0);
-		return;
-	}
-	assert(lua_type(L, -1) == LUA_TTABLE);
 	lua_setglobal(L, name);
 
 	for(i=1;i<NRLUASTATES;i++) {
-		lua_State *L = lua_state[i].L;
+		L = lua_state[i].L;
 		luaL_loadbuffer(L, module->bytecode, module->size, module->name);
-		assert(plua_check_stack(L, 1, PLUA_TFUNCTION) == 0);
-		if(plua_pcall(L, module->file, 0, LUA_MULTRET) == -1) {
-			assert(plua_check_stack(L, 0) == 0);
-			return;
-		}
-		assert(plua_check_stack(L, 1, PLUA_TTABLE) == 0);
+		lua_pcall(L, 0, LUA_MULTRET, 0);
+		assert(lua_type(L, -1) == LUA_TTABLE);
 		lua_setglobal(L, name);
 	}
 
 	lua_getglobal(L, name);
 	if(lua_type(L, -1) == LUA_TNIL) {
 		lua_pop(L, -1);
-		assert(plua_check_stack(L, 0) == 0);
 		return;
 	}
 	if(lua_type(L, -1) != LUA_TTABLE) {
 		lua_pop(L, -1);
-		assert(plua_check_stack(L, 0) == 0);
 		return;
 	}
 
-	assert(plua_check_stack(L, 1, PLUA_TTABLE) == 0);
 #ifdef PILIGHT_UNITTEST
 	if(module->type != UNITTEST) {
 		if(lua_type(L, -1) == LUA_TTABLE) {
 			lua_pushvalue(L, -1);
 			lua_pushnil(L);
 
-			/*
-			 * Possible location of:
-			 * 'invalid key to 'next'
-			 */
 			while(lua_next(L, -2)) {
 				lua_pushvalue(L, -2);
 
@@ -1505,16 +1461,17 @@ void plua_module_load(char *file, int type) {
 				if((info.function = STRDUP((char *)lua_tostring(L, -1))) == NULL) {
 					OUT_OF_MEMORY
 				}
-				lua_insert(L, -2);
+				lua_pop(L, 1);
 
 				if(lua_type(L, -1) == LUA_TFUNCTION) {
-					plua_pcall(L, module->file, 0, LUA_MULTRET);
+					lua_pcall(L, 0, LUA_MULTRET, 0);
 				}
 
 				while(lua_gettop(L) > 3) {
 					lua_remove(L, -1);
 				}
 			}
+
 			lua_pop(L, 1);
 		}
 		lua_pop(L, -1);
@@ -1530,7 +1487,7 @@ void plua_module_load(char *file, int type) {
 	lua_pop(L, -1);
 
 	for(i=0;i<NRLUASTATES;i++) {
-		assert(plua_check_stack(lua_state[i].L, 0) == 0);
+		assert(lua_gettop(lua_state[i].L) == 0);
 	}
 }
 
@@ -1683,35 +1640,6 @@ void plua_coverage_output(const char *file) {
 }
 #endif
 
-static int plua_atpanic(lua_State *L) {
-	struct lua_state_t *state = plua_get_current_state(L);
-
-	if(state != NULL) {
-		if(state->file != NULL && state->line != -1) {
-			logprintf(LOG_ERR, "(%s #%d) Lua panic (#%d): %s", state->file, state->line, state->idx, lua_tostring(L, -1));
-		} else {
-			logprintf(LOG_ERR, "Lua panic (#%d): %s", state->idx, lua_tostring(L, -1));
-		}
-		state->file = NULL;
-		state->line = -1;
-	} else {
-		logprintf(LOG_ERR, "Lua panic: %s", lua_tostring(L, -1));
-	}
-
-	while(lua_gettop(L) > 0) {
-		lua_remove(L, -1);
-	}
-
-	abort();
-	return 0;
-}
-
-void plua_set_file_line(lua_State *L, char *file, int line) {
-	struct lua_state_t *state = plua_get_current_state(L);
-	state->line = line;
-	state->file = file;
-}
-
 void plua_init(void) {
 	if(init == 1) {
 		return;
@@ -1732,10 +1660,7 @@ void plua_init(void) {
 		plua_register_library(L);
 		lua_state[i].L = L;
 		lua_state[i].idx = i;
-		lua_state[i].file = NULL;
-		lua_state[i].line = -1;
 
-		lua_atpanic(L, &plua_atpanic);
 #ifdef PILIGHT_UNITTEST
 		lua_sethook(L, hook, LUA_MASKLINE, 0);
 #endif
@@ -1778,19 +1703,15 @@ int plua_module_exists(char *module, int type) {
 	lua_getglobal(L, name);
 	if(lua_type(L, -1) == LUA_TNIL) {
 		lua_pop(L, -1);
-		assert(plua_check_stack(L, 0) == 0);
-		plua_clear_state(state);
 		return -1;
 	}
 	if(lua_type(L, -1) != LUA_TTABLE) {
 		lua_pop(L, -1);
-		assert(plua_check_stack(L, 0) == 0);
-		plua_clear_state(state);
 		return -1;
 	}
 	lua_pop(L, -1);
 
-	assert(plua_check_stack(L, 0) == 0);
+	assert(lua_gettop(L) == 0);
 	plua_clear_state(state);
 
 	return 0;
@@ -1864,57 +1785,20 @@ void plua_gc_reg(lua_State *L, void *ptr, void (*callback)(void *ptr)) {
 	uv_mutex_unlock(&state->gc.lock);
 }
 
-static unsigned int number2bitwise(unsigned int num) {
-	switch(num) {
-		case LUA_TNONE: { return PLUA_TNONE; } break;
-		case LUA_TNIL: { return PLUA_TNIL; } break;
-		case LUA_TBOOLEAN: { return PLUA_TBOOLEAN; } break;
-		case LUA_TLIGHTUSERDATA: { return PLUA_TLIGHTUSERDATA; } break;
-		case LUA_TNUMBER: { return PLUA_TNUMBER; } break;
-		case LUA_TSTRING: { return PLUA_TSTRING; } break;
-		case LUA_TTABLE: { return PLUA_TTABLE; } break;
-		case LUA_TFUNCTION: { return PLUA_TFUNCTION; } break;
-		case LUA_TUSERDATA: { return PLUA_TUSERDATA; } break;
-		case LUA_TTHREAD: { return PLUA_TTHREAD; } break;
+void plua_ret_true(lua_State *L) {
+	while(lua_gettop(L) > 0) {
+		lua_pop(L, 1);
 	}
-	return -1;
-};
+	assert(lua_gettop(L) == 0);
+	lua_pushboolean(L, 1);
+}
 
-int plua_check_stack(lua_State *L, int numargs, ...) {
-	struct lua_state_t *state = plua_get_current_state(L);
-	unsigned int val = 0, i = 0, a = 0, b = 0;
-	va_list ap;
-
-	if(lua_gettop(L) != numargs || lua_gettop(L) < 0) {
-		plua_stack_dump(L);
-		if(state->oldmod != NULL) {
-			logprintf(LOG_ERR, "%s:%s %s #%d\n",
-				state->oldmod->name, state->oldmod->file, state->oldmod->btfile, state->oldmod->btline
-			);
-		}
-		return -1;
+void plua_ret_false(lua_State *L) {
+	while(lua_gettop(L) > 0) {
+		lua_pop(L, 1);
 	}
-
-	va_start(ap, numargs);
-	for(i=0;i<numargs;i++) {
-		val = va_arg(ap, int);
-		a = number2bitwise(lua_type(L, i+1));
-		b = val;
-		if((b & a) != a) {
-			plua_stack_dump(L);
-			if(state->oldmod != NULL) {
-				logprintf(LOG_ERR, "%:%s %s #%d\n",
-					state->oldmod->name, state->oldmod->file, state->oldmod->btfile, state->oldmod->btline
-				);
-			}
-			return -1;
-		}
-	}
-	va_end(ap);
-
-	return 0;
-
-	return 0;
+	assert(lua_gettop(L) == 0);
+	lua_pushboolean(L, 0);
 }
 
 //#ifdef PILIGHT_UNITTEST
@@ -1927,8 +1811,6 @@ void plua_override_global(char *name, int (*func)(lua_State *L)) {
 		lua_pushcfunction(lua_state[i].L, func);
 		lua_setfield(lua_state[i].L, -2, name);
 		lua_remove(lua_state[i].L, -1);
-
-		assert(plua_check_stack(lua_state[i].L, 0) == 0);
 
 		uv_mutex_unlock(&lua_state[i].lock);
 	}
@@ -1948,61 +1830,19 @@ int plua_get_method(struct lua_State *L, char *file, char *method) {
 	return 0;
 }
 
-static int plua_error_handler(lua_State* L) {
-	struct lua_state_t *state = plua_get_current_state(L);
-
-	lua_Debug ar;
-	int level = 0, p = 0;
-	int buffer = 4096;
-	char msg[buffer];
-	memset(&msg, 0, buffer);
-
-	const char *err = lua_tostring(L, -1);
-	p += snprintf(&msg[p], buffer-p, "\n---- LUA STACKTRACE ----\n");
-	if(state != NULL && state->module != NULL && state->module->btfile != NULL) {
-		p += snprintf(&msg[p], buffer-p, " %s #%d\n", state->module->btfile, state->module->btline);
-	}
-	p += snprintf(&msg[p], buffer-p, " %s\n\n", err);
-	while(lua_getstack(L, level, &ar) == 1) {
-		lua_getinfo(L, "nSfLl", &ar);
-		lua_pop(L, 1);
-		p += snprintf(&msg[p], buffer-p, " [#%.3d] %s:%d ", level, ar.short_src, ar.currentline);
-
-		if(ar.name != 0) {
-			p += snprintf(&msg[p], buffer-p, "(%s %s)\n", ar.namewhat, ar.name);
-		} else {
-			p += snprintf(&msg[p], buffer-p, "\n");
-		}
-		level++;
-	}
-	p += snprintf(&msg[p], buffer-p, "\n---- LUA STACKTRACE ----");
-	lua_pushstring(L, msg);
-	return 1;
-}
-
 int plua_pcall(struct lua_State *L, char *file, int args, int ret) {
-	int hpos = lua_gettop(L) - args;
-	lua_pushcfunction(L, plua_error_handler);
-	lua_insert(L, hpos);
-
-	if(lua_pcall(L, args, ret, hpos) == LUA_ERRRUN) {
+	if(lua_pcall(L, args, ret, 0) == LUA_ERRRUN) {
 		if(lua_type(L, -1) == LUA_TNIL) {
 			logprintf(LOG_ERR, "%s: syntax error", file);
-			lua_remove(L, -1);
-			lua_remove(L, -1);
 			return -1;
 		}
 		if(lua_type(L, -1) == LUA_TSTRING) {
 			logprintf(LOG_ERR, "%s", lua_tostring(L, -1));
-			lua_remove(L, hpos);
-			lua_remove(L, -1);
-			lua_remove(L, -1);
+			lua_pop(L, 1);
+			lua_pop(L, 1);
 			return -1;
 		}
 	}
-
-	lua_remove(L, hpos);
-
 	return 0;
 }
 
@@ -2034,128 +1874,6 @@ static void plua__json_to_table(struct lua_State *L, struct JsonNode *jnode) {
 	}
 }
 
-void plua_metatable_to_json(struct plua_metatable_t *table, struct JsonNode **jnode) {
-	if(table == NULL) {
-		return;
-	}
-
-	int mkobject = 0, x = 0;
-	for(x=0;x<table->nrvar;x++) {
-		if(table->table[x].key.type_ == LUA_TSTRING) {
-			mkobject = 1;
-			break;
-		}
-	}
-
-	if(mkobject == 1) {
-		*jnode = json_mkobject();
-	} else {
-		*jnode = json_mkarray();
-	}
-
-	for(x=0;x<table->nrvar;x++) {
-		if(table->table[x].key.type_ == LUA_TNUMBER) {
-			if(mkobject == 1) {
-				int len = 0;
-				char *key = NULL, *val = NULL;
-				len = snprintf(NULL, 0, "%g", (float)table->table[x].key.number_);
-				if((key = MALLOC(len+1)) == NULL) {
-					OUT_OF_MEMORY
-				}
-				memset(key, 0, len+1);
-				len = snprintf(key, len+1, "%g", (float)table->table[x].key.number_);
-
-				if(table->table[x].val.type_ == LUA_TSTRING) {
-					json_append_member(*jnode, key, json_mkstring(table->table[x].val.string_));
-				} else if(table->table[x].val.type_ == LUA_TBOOLEAN) {
-					json_append_member(*jnode, key, json_mkbool((int)table->table[x].val.number_));
-				} else if(table->table[x].val.type_ == LUA_TNUMBER) {
-					len = snprintf(NULL, 0, "%g", (float)table->table[x].val.number_);
-					if((val = MALLOC(len+1)) == NULL) {
-						OUT_OF_MEMORY
-					}
-					memset(val, 0, len+1);
-					len = snprintf(val, len+1, "%g", (float)table->table[x].val.number_);
-
-					json_append_member(*jnode, key, json_mknumber(table->table[x].val.number_, nrDecimals(val)));
-					FREE(val);
-				} else if(table->table[x].val.type_ == LUA_TTABLE) {
-					struct JsonNode *jchild = NULL;
-					plua_metatable_to_json(table->table[x].val.void_, &jchild);
-					json_append_member(*jnode, key, jchild);
-				}
-
-				FREE(key);
-			} else {
-				if(table->table[x].val.type_ == LUA_TSTRING) {
-					json_append_element(*jnode, json_mkstring(table->table[x].val.string_));
-				} else if(table->table[x].val.type_ == LUA_TBOOLEAN) {
-					json_append_element(*jnode, json_mkbool((int)table->table[x].val.number_));
-				} else if(table->table[x].val.type_ == LUA_TNUMBER) {
-					char *val = NULL;
-					int len = snprintf(NULL, 0, "%g", (float)table->table[x].val.number_);
-					if((val = MALLOC(len+1)) == NULL) {
-						OUT_OF_MEMORY
-					}
-					memset(val, 0, len+1);
-					len = snprintf(val, len+1, "%g", (float)table->table[x].val.number_);
-
-					json_append_element(*jnode, json_mknumber(table->table[x].val.number_, nrDecimals(val)));
-					FREE(val);
-				} else if(table->table[x].val.type_ == LUA_TTABLE) {
-					struct JsonNode *jchild = NULL;
-					plua_metatable_to_json(table->table[x].val.void_, &jchild);
-					json_append_element(*jnode, jchild);
-				}
-			}
-		} else if(table->table[x].key.type_ == LUA_TSTRING) {
-			if(mkobject == 1) {
-				if(table->table[x].val.type_ == LUA_TSTRING) {
-					json_append_member(*jnode, table->table[x].key.string_, json_mkstring(table->table[x].val.string_));
-				} else if(table->table[x].val.type_ == LUA_TBOOLEAN) {
-					json_append_member(*jnode, table->table[x].key.string_, json_mkbool((int)table->table[x].val.number_));
-				} else if(table->table[x].val.type_ == LUA_TNUMBER) {
-					char *val = NULL;
-					int len = snprintf(NULL, 0, "%g", (float)table->table[x].val.number_);
-					if((val = MALLOC(len+1)) == NULL) {
-						OUT_OF_MEMORY
-					}
-					memset(val, 0, len+1);
-					len = snprintf(val, len+1, "%g", (float)table->table[x].val.number_);
-
-					json_append_member(*jnode, table->table[x].key.string_, json_mknumber(table->table[x].val.number_, nrDecimals(val)));
-					FREE(val);
-				} else if(table->table[x].val.type_ == LUA_TTABLE) {
-					struct JsonNode *jchild = NULL;
-					plua_metatable_to_json(table->table[x].val.void_, &jchild);
-					json_append_member(*jnode, table->table[x].key.string_, jchild);
-				}
-			} else {
-				if(table->table[x].val.type_ == LUA_TSTRING) {
-					json_append_element(*jnode, json_mkstring(table->table[x].val.string_));
-				} else if(table->table[x].val.type_ == LUA_TBOOLEAN) {
-					json_append_element(*jnode, json_mkbool((int)table->table[x].val.number_));
-				} else if(table->table[x].val.type_ == LUA_TNUMBER) {
-					char *val = NULL;
-					int len = snprintf(NULL, 0, "%g", (float)table->table[x].val.number_);
-					if((val = MALLOC(len+1)) == NULL) {
-						OUT_OF_MEMORY
-					}
-					memset(val, 0, len+1);
-					len = snprintf(val, len+1, "%g", (float)table->table[x].val.number_);
-
-					json_append_element(*jnode, json_mknumber(table->table[x].val.number_, nrDecimals(val)));
-					FREE(val);
-				} else if(table->table[x].val.type_ == LUA_TTABLE) {
-					struct JsonNode *jchild = NULL;
-					plua_metatable_to_json(table->table[x].val.void_, &jchild);
-					json_append_element(*jnode, jchild);
-				}
-			}
-		}
-	}
-}
-
 int plua_json_to_table(struct plua_metatable_t *table, struct JsonNode *jnode) {
 	struct lua_state_t *state = plua_get_free_state();
 	struct lua_State *L = NULL;
@@ -2175,15 +1893,15 @@ int plua_json_to_table(struct plua_metatable_t *table, struct JsonNode *jnode) {
 			lua_pop(L, 1);
 		}
 		lua_pop(L, 1);
-		assert(plua_check_stack(L, 0) == 0);
-		plua_clear_state(state);
+
+		uv_mutex_unlock(&state->lock);
 
 		return 0;
 	}
 
 	lua_pop(L, 1);
-	assert(plua_check_stack(L, 0) == 0);
-	plua_clear_state(state);
+
+	uv_mutex_unlock(&state->lock);
 
 	return -1;
 }
@@ -2331,7 +2049,7 @@ void plua_package_path(const char *path) {
 		lua_setfield(lua_state[i].L, -2, "path");
 
 		lua_pop(lua_state[i].L, 1);
-		assert(plua_check_stack(lua_state[i].L, 0) == 0);
+
 		FREE(newpath);
 	}
 }

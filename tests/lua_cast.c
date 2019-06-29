@@ -132,9 +132,7 @@ static void test_lua_cast_toboolean(CuTest *tc) {
 
 	CuAssertIntEquals(tc, 0, luaL_dostring(state->L, "print(pilight.cast.toboolean(true))"));
 
-	lua_remove(state->L, -1);
-	lua_remove(state->L, -1);
-	plua_clear_state(state);
+	uv_mutex_unlock(&state->lock);
 
 	plua_pause_coverage(0);
 	plua_gc();
@@ -255,9 +253,7 @@ static void test_lua_cast_tostring(CuTest *tc) {
 	CuAssertIntEquals(tc, 0, luaL_dostring(state->L, "print(pilight.cast.tostring(10.00000000))"));
 	FREE(lua_return[0].var.string_);
 
-	lua_remove(state->L, -1);
-	lua_remove(state->L, -1);
-	plua_clear_state(state);
+	uv_mutex_unlock(&state->lock);
 
 	plua_pause_coverage(0);
 	plua_gc();
@@ -340,9 +336,7 @@ static void test_lua_cast_tonumber(CuTest *tc) {
 
 	CuAssertIntEquals(tc, 0, luaL_dostring(state->L, "print(pilight.cast.tonumber(true))"));
 
-	lua_remove(state->L, -1);
-	lua_remove(state->L, -1);
-	plua_clear_state(state);
+	uv_mutex_unlock(&state->lock);
 
 	plua_pause_coverage(0);
 	plua_gc();

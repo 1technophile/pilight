@@ -52,11 +52,11 @@ static int plua_network_mail_set_data(lua_State *L) {
 	struct lua_mail_t *mail = (void *)lua_topointer(L, lua_upvalueindex(1));
 
 	if(lua_gettop(L) != 1) {
-		pluaL_error(L, "mail.setData requires 1 argument, %d given", lua_gettop(L));
+		luaL_error(L, "mail.setData requires 1 argument, %d given", lua_gettop(L));
 	}
 
 	if(mail == NULL) {
-		pluaL_error(L, "internal error: mail object not passed");
+		luaL_error(L, "internal error: mail object not passed");
 	}
 
 	char buf[128] = { '\0' }, *p = buf;
@@ -78,9 +78,7 @@ static int plua_network_mail_set_data(lua_State *L) {
 			uv_sem_post(mail->table->ref);
 		}
 
-		lua_pushboolean(L, 1);
-
-		assert(plua_check_stack(L, 1, PLUA_TBOOLEAN) == 1);
+		plua_ret_true(L);
 
 		return 1;
 	}
@@ -92,16 +90,11 @@ static int plua_network_mail_set_data(lua_State *L) {
 			lua_pop(L, 1);
 		}
 
-		lua_pushboolean(L, 1);
-
-		assert(plua_check_stack(L, 1, PLUA_TBOOLEAN) == 1);
-
+		plua_ret_true(L);
 		return 1;
 	}
 
-	lua_pushboolean(L, 0);
-
-	assert(plua_check_stack(L, 1, PLUA_TBOOLEAN) == 1);
+	plua_ret_false(L);
 
 	return 0;
 }
@@ -110,18 +103,18 @@ static int plua_network_mail_get_data(lua_State *L) {
 	struct lua_mail_t *mail = (void *)lua_topointer(L, lua_upvalueindex(1));
 
 	if(lua_gettop(L) != 0) {
-		pluaL_error(L, "mail.setUserdata requires 0 argument, %d given", lua_gettop(L));
+		luaL_error(L, "mail.setUserdata requires 0 argument, %d given", lua_gettop(L));
 		return 0;
 	}
 
 	if(mail == NULL) {
-		pluaL_error(L, "internal error: mail object not passed");
+		luaL_error(L, "internal error: mail object not passed");
 		return 0;
 	}
 
 	plua_metatable__push(L, (struct plua_interface_t *)mail);
 
-	assert(plua_check_stack(L, 1, PLUA_TTABLE) == 0);
+	assert(lua_gettop(L) == 1);
 
 	return 1;
 }
@@ -131,11 +124,11 @@ static int plua_network_mail_set_subject(lua_State *L) {
 	char *subject = NULL;
 
 	if(lua_gettop(L) != 1) {
-		pluaL_error(L, "mail.setSubject requires 1 argument, %d given", lua_gettop(L));
+		luaL_error(L, "mail.setSubject requires 1 argument, %d given", lua_gettop(L));
 	}
 
 	if(mail == NULL) {
-		pluaL_error(L, "internal error: mail object not passed");
+		luaL_error(L, "internal error: mail object not passed");
 	}
 
 	char buf[128] = { '\0' }, *p = buf;
@@ -155,7 +148,7 @@ static int plua_network_mail_set_subject(lua_State *L) {
 
 	lua_pushboolean(L, 1);
 
-	assert(plua_check_stack(L, 1, PLUA_TBOOLEAN) == 0);
+	assert(lua_gettop(L) == 1);
 
 	return 1;
 }
@@ -165,11 +158,11 @@ static int plua_network_mail_set_from(lua_State *L) {
 	char *from = NULL;
 
 	if(lua_gettop(L) != 1) {
-		pluaL_error(L, "mail.setFrom requires 1 argument, %d given", lua_gettop(L));
+		luaL_error(L, "mail.setFrom requires 1 argument, %d given", lua_gettop(L));
 	}
 
 	if(mail == NULL) {
-		pluaL_error(L, "internal error: mail object not passed");
+		luaL_error(L, "internal error: mail object not passed");
 	}
 
 	char buf[128] = { '\0' }, *p = buf;
@@ -189,7 +182,7 @@ static int plua_network_mail_set_from(lua_State *L) {
 
 	lua_pushboolean(L, 1);
 
-	assert(plua_check_stack(L, 1, PLUA_TBOOLEAN) == 0);
+	assert(lua_gettop(L) == 1);
 
 	return 1;
 }
@@ -199,11 +192,11 @@ static int plua_network_mail_set_to(lua_State *L) {
 	char *to = NULL;
 
 	if(lua_gettop(L) != 1) {
-		pluaL_error(L, "mail.setTo requires 1 argument, %d given", lua_gettop(L));
+		luaL_error(L, "mail.setTo requires 1 argument, %d given", lua_gettop(L));
 	}
 
 	if(mail == NULL) {
-		pluaL_error(L, "internal error: mail object not passed");
+		luaL_error(L, "internal error: mail object not passed");
 	}
 
 	char buf[128] = { '\0' }, *p = buf;
@@ -223,7 +216,7 @@ static int plua_network_mail_set_to(lua_State *L) {
 
 	lua_pushboolean(L, 1);
 
-	assert(plua_check_stack(L, 1, PLUA_TBOOLEAN) == 0);
+	assert(lua_gettop(L) == 1);
 
 	return 1;
 }
@@ -233,11 +226,11 @@ static int plua_network_mail_set_message(lua_State *L) {
 	char *message = NULL;
 
 	if(lua_gettop(L) != 1) {
-		pluaL_error(L, "mail.setMessage requires 1 argument, %d given", lua_gettop(L));
+		luaL_error(L, "mail.setMessage requires 1 argument, %d given", lua_gettop(L));
 	}
 
 	if(mail == NULL) {
-		pluaL_error(L, "internal error: mail object not passed");
+		luaL_error(L, "internal error: mail object not passed");
 	}
 
 	char buf[128] = { '\0' }, *p = buf;
@@ -257,7 +250,7 @@ static int plua_network_mail_set_message(lua_State *L) {
 
 	lua_pushboolean(L, 1);
 
-	assert(plua_check_stack(L, 1, PLUA_TBOOLEAN) == 0);
+	assert(lua_gettop(L) == 1);
 
 	return 1;
 }
@@ -267,11 +260,11 @@ static int plua_network_mail_set_port(lua_State *L) {
 	int port = 0;
 
 	if(lua_gettop(L) != 1) {
-		pluaL_error(L, "mail.setPort requires 1 argument, %d given", lua_gettop(L));
+		luaL_error(L, "mail.setPort requires 1 argument, %d given", lua_gettop(L));
 	}
 
 	if(mail == NULL) {
-		pluaL_error(L, "internal error: mail object not passed");
+		luaL_error(L, "internal error: mail object not passed");
 	}
 
 	char buf[128] = { '\0' }, *p = buf;
@@ -290,7 +283,7 @@ static int plua_network_mail_set_port(lua_State *L) {
 
 	lua_pushboolean(L, 1);
 
-	assert(plua_check_stack(L, 1, PLUA_TBOOLEAN) == 0);
+	assert(lua_gettop(L) == 1);
 
 	return 1;
 }
@@ -300,11 +293,11 @@ static int plua_network_mail_set_host(lua_State *L) {
 	char *host = NULL;
 
 	if(lua_gettop(L) != 1) {
-		pluaL_error(L, "mail.setHost requires 1 argument, %d given", lua_gettop(L));
+		luaL_error(L, "mail.setHost requires 1 argument, %d given", lua_gettop(L));
 	}
 
 	if(mail == NULL) {
-		pluaL_error(L, "internal error: mail object not passed");
+		luaL_error(L, "internal error: mail object not passed");
 	}
 
 	char buf[128] = { '\0' }, *p = buf;
@@ -324,7 +317,7 @@ static int plua_network_mail_set_host(lua_State *L) {
 
 	lua_pushboolean(L, 1);
 
-	assert(plua_check_stack(L, 1, PLUA_TBOOLEAN) == 0);
+	assert(lua_gettop(L) == 1);
 
 	return 1;
 }
@@ -334,11 +327,11 @@ static int plua_network_mail_set_user(lua_State *L) {
 	char *user = NULL;
 
 	if(lua_gettop(L) != 1) {
-		pluaL_error(L, "mail.setUser requires 1 argument, %d given", lua_gettop(L));
+		luaL_error(L, "mail.setUser requires 1 argument, %d given", lua_gettop(L));
 	}
 
 	if(mail == NULL) {
-		pluaL_error(L, "internal error: mail object not passed");
+		luaL_error(L, "internal error: mail object not passed");
 	}
 
 	char buf[128] = { '\0' }, *p = buf;
@@ -358,7 +351,7 @@ static int plua_network_mail_set_user(lua_State *L) {
 
 	lua_pushboolean(L, 1);
 
-	assert(plua_check_stack(L, 1, PLUA_TBOOLEAN) == 0);
+	assert(lua_gettop(L) == 1);
 
 	return 1;
 }
@@ -368,11 +361,11 @@ static int plua_network_mail_set_password(lua_State *L) {
 	char *password = NULL;
 
 	if(lua_gettop(L) != 1) {
-		pluaL_error(L, "mail.setPassword requires 1 argument, %d given", lua_gettop(L));
+		luaL_error(L, "mail.setPassword requires 1 argument, %d given", lua_gettop(L));
 	}
 
 	if(mail == NULL) {
-		pluaL_error(L, "internal error: mail object not passed");
+		luaL_error(L, "internal error: mail object not passed");
 	}
 
 	char buf[128] = { '\0' }, *p = buf;
@@ -392,7 +385,7 @@ static int plua_network_mail_set_password(lua_State *L) {
 
 	lua_pushboolean(L, 1);
 
-	assert(plua_check_stack(L, 1, PLUA_TBOOLEAN) == 0);
+	assert(lua_gettop(L) == 1);
 
 	return 1;
 }
@@ -402,15 +395,15 @@ static int plua_network_mail_set_callback(lua_State *L) {
 	char *func = NULL;
 
 	if(lua_gettop(L) != 1) {
-		pluaL_error(L, "mail.setCallback requires 1 argument, %d given", lua_gettop(L));
+		luaL_error(L, "mail.setCallback requires 1 argument, %d given", lua_gettop(L));
 	}
 
 	if(mail == NULL) {
-		pluaL_error(L, "internal error: mail object not passed");
+		luaL_error(L, "internal error: mail object not passed");
 	}
 
 	if(mail->module == NULL) {
-		pluaL_error(L, "internal error: lua state not properly initialized");
+		luaL_error(L, "internal error: lua state not properly initialized");
 	}
 
 	char buf[128] = { '\0' }, *p = buf, name[255] = { '\0' };
@@ -430,12 +423,12 @@ static int plua_network_mail_set_callback(lua_State *L) {
 
 	lua_getglobal(L, name);
 	if(lua_type(L, -1) == LUA_TNIL) {
-		pluaL_error(L, "cannot find %s lua module", mail->module->name);
+		luaL_error(L, "cannot find %s lua module", mail->module->name);
 	}
 
 	lua_getfield(L, -1, func);
 	if(lua_type(L, -1) != LUA_TFUNCTION) {
-		pluaL_error(L, "%s: mail callback %s does not exist", mail->module->file, func);
+		luaL_error(L, "%s: mail callback %s does not exist", mail->module->file, func);
 	}
 	lua_remove(L, -1);
 	lua_remove(L, -1);
@@ -446,7 +439,7 @@ static int plua_network_mail_set_callback(lua_State *L) {
 
 	lua_pushboolean(L, 1);
 
-	assert(plua_check_stack(L, 1, PLUA_TBOOLEAN) == 0);
+	assert(lua_gettop(L) == 1);
 
 	return 1;
 }
@@ -456,11 +449,11 @@ static int plua_network_mail_set_ssl(lua_State *L) {
 	int ssl = 0;
 
 	if(lua_gettop(L) != 1) {
-		pluaL_error(L, "mail.setSSL requires 1 argument, %d given", lua_gettop(L));
+		luaL_error(L, "mail.setSSL requires 1 argument, %d given", lua_gettop(L));
 	}
 
 	if(mail == NULL) {
-		pluaL_error(L, "internal error: mail object not passed");
+		luaL_error(L, "internal error: mail object not passed");
 	}
 
 	char buf[128] = { '\0' }, *p = buf;
@@ -475,11 +468,12 @@ static int plua_network_mail_set_ssl(lua_State *L) {
 	ssl = lua_tonumber(L, -1);
 	mail->is_ssl = ssl;
 
+
 	lua_remove(L, -1);
 
 	lua_pushboolean(L, 1);
 
-	assert(plua_check_stack(L, 1, PLUA_TBOOLEAN) == 0);
+	assert(lua_gettop(L) == 1);
 
 	return 1;
 }
@@ -501,28 +495,32 @@ static void plua_network_mail_callback(int status, struct mail_t *mail) {
 
 	lua_getglobal(state->L, name);
 	if(lua_type(state->L, -1) == LUA_TNIL) {
-		pluaL_error(state->L, "cannot find %s lua module", name);
+		luaL_error(state->L, "cannot find %s lua module", name);
 	}
 
 	lua_getfield(state->L, -1, data->callback);
 
 	if(lua_type(state->L, -1) != LUA_TFUNCTION) {
-		pluaL_error(state->L, "%s: mail callback %s does not exist", state->module->file, data->callback);
+		luaL_error(state->L, "%s: mail callback %s does not exist", state->module->file, data->callback);
 	}
 
 	plua_network_mail_object(state->L, data);
 
 	data->status = status;
 
-	assert(plua_check_stack(state->L, 3, PLUA_TTABLE, PLUA_TFUNCTION, PLUA_TTABLE) == 0);
-	if(plua_pcall(state->L, state->module->file, 1, 0) == -1) {
-		assert(plua_check_stack(state->L, 0) == 0);
-		plua_clear_state(state);
-		goto error;
+	if(lua_pcall(state->L, 1, 0, 0) == LUA_ERRRUN) {
+		if(lua_type(state->L, -1) == LUA_TNIL) {
+			logprintf(LOG_ERR, "%s: syntax error", state->module->file);
+			goto error;
+		}
+		if(lua_type(state->L, -1) == LUA_TSTRING) {
+			logprintf(LOG_ERR, "%s", lua_tostring(state->L,  -1));
+			lua_pop(state->L, -1);
+			plua_clear_state(state);
+			goto error;
+		}
 	}
 	lua_remove(state->L, 1);
-
-	assert(plua_check_stack(state->L, 0) == 0);
 	plua_clear_state(state);
 
 error:
@@ -543,47 +541,47 @@ static int plua_network_mail_send(lua_State *L) {
 	struct lua_mail_t *mail = (void *)lua_topointer(L, lua_upvalueindex(1));
 
 	if(lua_gettop(L) != 0) {
-		pluaL_error(L, "mail.send requires 0 arguments, %d given", lua_gettop(L));
+		luaL_error(L, "mail.send requires 0 arguments, %d given", lua_gettop(L));
 	}
 
 	if(mail == NULL) {
-		pluaL_error(L, "internal error: mail object not passed");
+		luaL_error(L, "internal error: mail object not passed");
 	}
 
 	if(mail->host == NULL) {
-		pluaL_error(L, "mail server host not set");
+		luaL_error(L, "mail server host not set");
 	}
 
 	if(mail->user == NULL) {
-		pluaL_error(L, "mail server user not set");
+		luaL_error(L, "mail server user not set");
 	}
 
 	if(mail->password == NULL) {
-		pluaL_error(L, "mail server password not set");
+		luaL_error(L, "mail server password not set");
 	}
 
 	if(mail->port == 0) {
-		pluaL_error(L, "mail server port not set");
+		luaL_error(L, "mail server port not set");
 	}
 
 	if(mail->mail.subject == NULL) {
-		pluaL_error(L, "mail subject port not set");
+		luaL_error(L, "mail subject port not set");
 	}
 
 	if(mail->mail.to == NULL) {
-		pluaL_error(L, "mail recipient not set");
+		luaL_error(L, "mail recipient not set");
 	}
 
 	if(mail->mail.from == NULL) {
-		pluaL_error(L, "mail sender not set");
+		luaL_error(L, "mail sender not set");
 	}
 
 	if(mail->mail.message == NULL) {
-		pluaL_error(L, "mail message not set");
+		luaL_error(L, "mail message not set");
 	}
 
 	if(mail->callback == NULL) {
-		pluaL_error(L, "mail callback not set");
+		luaL_error(L, "mail callback not set");
 	}
 
 	mail->mail.data = mail;
@@ -601,8 +599,7 @@ static int plua_network_mail_send(lua_State *L) {
 		plua_network_mail_gc((void *)mail);
 
 		lua_pushboolean(L, 0);
-
-		assert(plua_check_stack(L, 1, PLUA_TBOOLEAN) == 0);
+		assert(lua_gettop(L) == 1);
 
 		return 1;
 	}
@@ -610,8 +607,7 @@ static int plua_network_mail_send(lua_State *L) {
 	plua_gc_unreg(mail->L, mail);
 
 	lua_pushboolean(L, 1);
-
-	assert(plua_check_stack(L, 1, PLUA_TBOOLEAN) == 0);
+	assert(lua_gettop(L) == 1);
 
 	return 1;
 }
@@ -620,11 +616,11 @@ static int plua_network_mail_get_status(lua_State *L) {
 	struct lua_mail_t *mail = (void *)lua_topointer(L, lua_upvalueindex(1));
 
 	if(lua_gettop(L) != 0) {
-		pluaL_error(L, "mail.getStatus requires 0 arguments, %d given", lua_gettop(L));
+		luaL_error(L, "mail.getStatus requires 0 arguments, %d given", lua_gettop(L));
 	}
 
 	if(mail == NULL) {
-		pluaL_error(L, "internal error: mail object not passed");
+		luaL_error(L, "internal error: mail object not passed");
 	}
 
 	switch(mail->status) {
@@ -639,7 +635,7 @@ static int plua_network_mail_get_status(lua_State *L) {
 		break;
 	}
 
-	assert(plua_check_stack(L, 1, PLUA_TBOOLEAN | PLUA_TNIL) == 0);
+	assert(lua_gettop(L) == 1);
 
 	return 1;
 }
@@ -648,11 +644,11 @@ static int plua_network_mail_get_subject(lua_State *L) {
 	struct lua_mail_t *mail = (void *)lua_topointer(L, lua_upvalueindex(1));
 
 	if(lua_gettop(L) != 0) {
-		pluaL_error(L, "mail.getSubject requires 0 arguments, %d given", lua_gettop(L));
+		luaL_error(L, "mail.getSubject requires 0 arguments, %d given", lua_gettop(L));
 	}
 
 	if(mail == NULL) {
-		pluaL_error(L, "internal error: mail object not passed");
+		luaL_error(L, "internal error: mail object not passed");
 	}
 
 	if(mail->mail.subject != NULL) {
@@ -661,7 +657,7 @@ static int plua_network_mail_get_subject(lua_State *L) {
 		lua_pushnil(L);
 	}
 
-	assert(plua_check_stack(L, 1, PLUA_TSTRING | PLUA_TNIL) == 0);
+	assert(lua_gettop(L) == 1);
 
 	return 1;
 }
@@ -670,11 +666,11 @@ static int plua_network_mail_get_to(lua_State *L) {
 	struct lua_mail_t *mail = (void *)lua_topointer(L, lua_upvalueindex(1));
 
 	if(lua_gettop(L) != 0) {
-		pluaL_error(L, "mail.getTo requires 0 arguments, %d given", lua_gettop(L));
+		luaL_error(L, "mail.getTo requires 0 arguments, %d given", lua_gettop(L));
 	}
 
 	if(mail == NULL) {
-		pluaL_error(L, "internal error: mail object not passed");
+		luaL_error(L, "internal error: mail object not passed");
 	}
 
 	if(mail->mail.to != NULL) {
@@ -683,7 +679,7 @@ static int plua_network_mail_get_to(lua_State *L) {
 		lua_pushnil(L);
 	}
 
-	assert(plua_check_stack(L, 1, PLUA_TSTRING | PLUA_TNIL) == 0);
+	assert(lua_gettop(L) == 1);
 
 	return 1;
 }
@@ -692,11 +688,11 @@ static int plua_network_mail_get_from(lua_State *L) {
 	struct lua_mail_t *mail = (void *)lua_topointer(L, lua_upvalueindex(1));
 
 	if(lua_gettop(L) != 0) {
-		pluaL_error(L, "mail.getFrom requires 0 arguments, %d given", lua_gettop(L));
+		luaL_error(L, "mail.getFrom requires 0 arguments, %d given", lua_gettop(L));
 	}
 
 	if(mail == NULL) {
-		pluaL_error(L, "internal error: mail object not passed");
+		luaL_error(L, "internal error: mail object not passed");
 	}
 
 	if(mail->mail.from != NULL) {
@@ -705,7 +701,7 @@ static int plua_network_mail_get_from(lua_State *L) {
 		lua_pushnil(L);
 	}
 
-	assert(plua_check_stack(L, 1, PLUA_TSTRING | PLUA_TNIL) == 0);
+	assert(lua_gettop(L) == 1);
 
 	return 1;
 }
@@ -714,11 +710,11 @@ static int plua_network_mail_get_message(lua_State *L) {
 	struct lua_mail_t *mail = (void *)lua_topointer(L, lua_upvalueindex(1));
 
 	if(lua_gettop(L) != 0) {
-		pluaL_error(L, "mail.getMessage requires 0 arguments, %d given", lua_gettop(L));
+		luaL_error(L, "mail.getMessage requires 0 arguments, %d given", lua_gettop(L));
 	}
 
 	if(mail == NULL) {
-		pluaL_error(L, "internal error: mail object not passed");
+		luaL_error(L, "internal error: mail object not passed");
 	}
 
 	if(mail->mail.message != NULL) {
@@ -727,7 +723,7 @@ static int plua_network_mail_get_message(lua_State *L) {
 		lua_pushnil(L);
 	}
 
-	assert(plua_check_stack(L, 1, PLUA_TSTRING | PLUA_TNIL) == 0);
+	assert(lua_gettop(L) == 1);
 
 	return 1;
 }
@@ -736,11 +732,11 @@ static int plua_network_mail_get_host(lua_State *L) {
 	struct lua_mail_t *mail = (void *)lua_topointer(L, lua_upvalueindex(1));
 
 	if(lua_gettop(L) != 0) {
-		pluaL_error(L, "mail.getHost requires 0 arguments, %d given", lua_gettop(L));
+		luaL_error(L, "mail.getHost requires 0 arguments, %d given", lua_gettop(L));
 	}
 
 	if(mail == NULL) {
-		pluaL_error(L, "internal error: mail object not passed");
+		luaL_error(L, "internal error: mail object not passed");
 	}
 
 	if(mail->host != NULL) {
@@ -749,7 +745,7 @@ static int plua_network_mail_get_host(lua_State *L) {
 		lua_pushnil(L);
 	}
 
-	assert(plua_check_stack(L, 1, PLUA_TSTRING | PLUA_TNIL) == 0);
+	assert(lua_gettop(L) == 1);
 
 	return 1;
 }
@@ -758,11 +754,11 @@ static int plua_network_mail_get_user(lua_State *L) {
 	struct lua_mail_t *mail = (void *)lua_topointer(L, lua_upvalueindex(1));
 
 	if(lua_gettop(L) != 0) {
-		pluaL_error(L, "mail.getUser requires 0 arguments, %d given", lua_gettop(L));
+		luaL_error(L, "mail.getUser requires 0 arguments, %d given", lua_gettop(L));
 	}
 
 	if(mail == NULL) {
-		pluaL_error(L, "internal error: mail object not passed");
+		luaL_error(L, "internal error: mail object not passed");
 	}
 
 	if(mail->user != NULL) {
@@ -771,7 +767,7 @@ static int plua_network_mail_get_user(lua_State *L) {
 		lua_pushnil(L);
 	}
 
-	assert(plua_check_stack(L, 1, PLUA_TSTRING | PLUA_TNIL) == 0);
+	assert(lua_gettop(L) == 1);
 
 	return 1;
 }
@@ -780,11 +776,11 @@ static int plua_network_mail_get_password(lua_State *L) {
 	struct lua_mail_t *mail = (void *)lua_topointer(L, lua_upvalueindex(1));
 
 	if(lua_gettop(L) != 0) {
-		pluaL_error(L, "mail.getPassword requires 0 arguments, %d given", lua_gettop(L));
+		luaL_error(L, "mail.getPassword requires 0 arguments, %d given", lua_gettop(L));
 	}
 
 	if(mail == NULL) {
-		pluaL_error(L, "internal error: mail object not passed");
+		luaL_error(L, "internal error: mail object not passed");
 	}
 
 	if(mail->password != NULL) {
@@ -793,7 +789,7 @@ static int plua_network_mail_get_password(lua_State *L) {
 		lua_pushnil(L);
 	}
 
-	assert(plua_check_stack(L, 1, PLUA_TSTRING | PLUA_TNIL) == 0);
+	assert(lua_gettop(L) == 1);
 
 	return 1;
 }
@@ -802,16 +798,16 @@ static int plua_network_mail_get_ssl(lua_State *L) {
 	struct lua_mail_t *mail = (void *)lua_topointer(L, lua_upvalueindex(1));
 
 	if(lua_gettop(L) != 0) {
-		pluaL_error(L, "mail.getSSL requires 0 arguments, %d given", lua_gettop(L));
+		luaL_error(L, "mail.getSSL requires 0 arguments, %d given", lua_gettop(L));
 	}
 
 	if(mail == NULL) {
-		pluaL_error(L, "internal error: mail object not passed");
+		luaL_error(L, "internal error: mail object not passed");
 	}
 
 	lua_pushnumber(L, mail->is_ssl);
 
-	assert(plua_check_stack(L, 1, PLUA_TNUMBER) == 0);
+	assert(lua_gettop(L) == 1);
 
 	return 1;
 }
@@ -820,16 +816,16 @@ static int plua_network_mail_get_port(lua_State *L) {
 	struct lua_mail_t *mail = (void *)lua_topointer(L, lua_upvalueindex(1));
 
 	if(lua_gettop(L) != 0) {
-		pluaL_error(L, "mail.getPort requires 0 arguments, %d given", lua_gettop(L));
+		luaL_error(L, "mail.getPort requires 0 arguments, %d given", lua_gettop(L));
 	}
 
 	if(mail == NULL) {
-		pluaL_error(L, "internal error: mail object not passed");
+		luaL_error(L, "internal error: mail object not passed");
 	}
 
 	lua_pushnumber(L, mail->port);
 
-	assert(plua_check_stack(L, 1, PLUA_TNUMBER) == 0);
+	assert(lua_gettop(L) == 1);
 
 	return 1;
 }
@@ -838,11 +834,11 @@ static int plua_network_mail_get_callback(lua_State *L) {
 	struct lua_mail_t *mail = (void *)lua_topointer(L, lua_upvalueindex(1));
 
 	if(lua_gettop(L) != 0) {
-		pluaL_error(L, "mail.getSSL requires 0 arguments, %d given", lua_gettop(L));
+		luaL_error(L, "mail.getSSL requires 0 arguments, %d given", lua_gettop(L));
 	}
 
 	if(mail == NULL) {
-		pluaL_error(L, "internal error: mail object not passed");
+		luaL_error(L, "internal error: mail object not passed");
 	}
 
 	if(mail->callback != NULL) {
@@ -851,7 +847,7 @@ static int plua_network_mail_get_callback(lua_State *L) {
 		lua_pushnil(L);
 	}
 
-	assert(plua_check_stack(L, 1, PLUA_TSTRING | PLUA_TNIL) == 0);
+	assert(lua_gettop(L) == 1);
 
 	return 1;
 }
@@ -1015,7 +1011,7 @@ static void plua_network_mail_object(lua_State *L, struct lua_mail_t *mail) {
 
 int plua_network_mail(struct lua_State *L) {
 	if(lua_gettop(L) != 0) {
-		pluaL_error(L, "timer requires 0 arguments, %d given", lua_gettop(L));
+		luaL_error(L, "timer requires 0 arguments, %d given", lua_gettop(L));
 		return 0;
 	}
 
@@ -1040,7 +1036,7 @@ int plua_network_mail(struct lua_State *L) {
 
 	plua_network_mail_object(L, lua_mail);
 
-	assert(plua_check_stack(L, 1, PLUA_TTABLE) == 0);
+	lua_assert(lua_gettop(L) == 1);
 
 	return 1;
 }

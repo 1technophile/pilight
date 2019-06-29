@@ -63,7 +63,6 @@ int config_callback_get_number(lua_State *L, char *module, char *key, int idx, i
 	lua_pushstring(state->L, key);
 	lua_pushnumber(state->L, idx);
 
-	assert(plua_check_stack(state->L, 4, PLUA_TTABLE, PLUA_TFUNCTION, PLUA_TSTRING, PLUA_TNUMBER) == 0);
 	if((x = plua_pcall(state->L, state->module->file, 2, 1)) == 0) {
 		if(lua_type(state->L, -1) == LUA_TNUMBER) {
 			*ret = (int)lua_tonumber(state->L, -1);
@@ -79,7 +78,7 @@ int config_callback_get_number(lua_State *L, char *module, char *key, int idx, i
 
 	lua_pop(state->L, -1);
 
-	assert(plua_check_stack(state->L, 0) == 0);
+	assert(lua_gettop(state->L) == 0);
 	state->module = oldmod;
 
 	return x;
@@ -115,7 +114,6 @@ int config_callback_get_string(lua_State *L, char *module, char *key, int idx, c
 	lua_pushstring(state->L, key);
 	lua_pushnumber(state->L, idx);
 
-	assert(plua_check_stack(state->L, 4, PLUA_TTABLE, PLUA_TFUNCTION, PLUA_TSTRING, PLUA_TNUMBER) == 0);
 	if((x = plua_pcall(state->L, state->module->file, 2, 1)) == 0) {
 		if(lua_type(state->L, -1) == LUA_TSTRING) {
 			if((*ret = STRDUP((char *)lua_tostring(state->L, -1))) == NULL) {
@@ -131,7 +129,7 @@ int config_callback_get_string(lua_State *L, char *module, char *key, int idx, c
 		lua_pop(state->L, -1);
 	}
 
-	assert(plua_check_stack(state->L, 0) == 0);
+	assert(lua_gettop(state->L) == 0);
 	state->module = oldmod;
 
 	return x;
@@ -154,7 +152,6 @@ int config_callback_set_string(lua_State *L, char *module, char *key, int idx, c
 	lua_pushnumber(state->L, idx);
 	lua_pushstring(state->L, val);
 
-	assert(plua_check_stack(state->L, 5, PLUA_TTABLE, PLUA_TFUNCTION, PLUA_TSTRING, PLUA_TNUMBER, PLUA_TSTRING) == 0);
 	if((x = plua_pcall(state->L, state->module->file, 3, 1)) == 0) {
 		if(lua_type(state->L, -1) == LUA_TNUMBER) {
 			x = lua_tonumber(state->L, -1);
@@ -165,7 +162,7 @@ int config_callback_set_string(lua_State *L, char *module, char *key, int idx, c
 		lua_pop(state->L, -1);
 	}
 
-	assert(plua_check_stack(state->L, 0) == 0);
+	assert(lua_gettop(state->L) == 0);
 	state->module = oldmod;
 
 	return x;
@@ -188,7 +185,6 @@ int config_callback_set_number(lua_State *L, char *module, char *key, int idx, i
 	lua_pushnumber(state->L, idx);
 	lua_pushnumber(state->L, val);
 
-	assert(plua_check_stack(state->L, 5, PLUA_TTABLE, PLUA_TFUNCTION, PLUA_TSTRING, PLUA_TNUMBER, PLUA_TNUMBER) == 0);
 	if((x = plua_pcall(state->L, state->module->file, 3, 1)) == 0) {
 		if(lua_type(state->L, -1) == LUA_TNUMBER) {
 			x = lua_tonumber(state->L, -1);
@@ -199,8 +195,7 @@ int config_callback_set_number(lua_State *L, char *module, char *key, int idx, i
 		lua_pop(state->L, -1);
 	}
 
-	assert(plua_check_stack(state->L, 0) == 0);
-
+	assert(lua_gettop(state->L) == 0);
 	state->module = oldmod;
 
 	return x;

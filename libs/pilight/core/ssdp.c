@@ -31,7 +31,6 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <errno.h>
-#include <assert.h>
 #include <sys/types.h>
 
 #include "pilight.h"
@@ -175,7 +174,6 @@ static int ssdp_create_header(char ***header) {
 			OUT_OF_MEMORY
 		}
 	}
-	assert(plua_check_stack(state->L, 0) == 0);
 	plua_clear_state(state);
 
 	if((nrdevs = inetdevs(&devs)) > 0) {
@@ -315,7 +313,7 @@ static void alloc(uv_handle_t *handle, size_t len, uv_buf_t *buf) {
 	memset(buf->base, 0, len);
 }
 
-static void read_cb(uv_udp_t *stream, ssize_t len, const uv_buf_t *buf, const struct sockaddr *addr, unsigned int flags) {
+static void read_cb(uv_udp_t *stream, ssize_t len, const uv_buf_t *buf, const struct sockaddr *addr, unsigned int port) {
 	struct data_t *node = stream->data;
 	char name[BUFFER_SIZE];
 	char *p = name;

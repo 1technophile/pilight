@@ -13,8 +13,6 @@
 #include <luajit-2.0/lualib.h>
 #include <luajit-2.0/lauxlib.h>
 
-// #include "ctrace.h"
-
 #include "../libs/pilight/core/common.h"
 
 #define NRLUASTATES	4
@@ -26,18 +24,6 @@
 #define PROTOCOL 	4
 #define STORAGE		5
 #define HARDWARE	6
-
-#define PLUA_TNONE               (-1)
-
-#define PLUA_TNIL                1
-#define PLUA_TBOOLEAN            2
-#define PLUA_TLIGHTUSERDATA      4
-#define PLUA_TNUMBER             8
-#define PLUA_TSTRING             16
-#define PLUA_TTABLE              32
-#define PLUA_TFUNCTION           64
-#define PLUA_TUSERDATA           128
-#define PLUA_TTHREAD             256
 
 typedef struct plua_metatable_t {
 	struct {
@@ -60,9 +46,6 @@ typedef struct plua_module_t {
 	char *bytecode;
 	int size;
 	int type;
-
-	int btline;
-	const char *btfile;
 	// struct plua_metatable_t *table;
 
 	struct plua_module_t *next;
@@ -72,7 +55,6 @@ typedef struct lua_state_t {
 	lua_State *L;
 	uv_mutex_t lock;
 	struct plua_module_t *module;
-	struct plua_module_t *oldmod;
 	struct plua_metatable_t *table;
 	int idx;
 
@@ -87,8 +69,6 @@ typedef struct lua_state_t {
 		uv_mutex_t lock;
 	} gc;
 
-	char *file;
-	int line;
 	uv_thread_t thread_id;
 } lua_state_t;
 
@@ -102,8 +82,6 @@ typedef struct plua_interface_t {
   PLUA_INTERFACE_FIELDS
 } plua_interface_t;
 
-void plua_set_file_line(lua_State *L, char *file, int line);
-void plua_metatable_to_json(struct plua_metatable_t *table, struct JsonNode **jnode);
 int plua_json_to_table(struct plua_metatable_t *table, struct JsonNode *jnode);
 int plua_pcall(struct lua_State *L, char *file, int args, int ret);
 int plua_get_method(struct lua_State *L, char *file, char *method);
@@ -119,11 +97,12 @@ void plua_module_load(char *, int);
 int plua_module_exists(char *, int);
 void plua_metatable_clone(struct plua_metatable_t **, struct plua_metatable_t **);
 struct lua_state_t *plua_get_free_state(void);
-void _plua_clear_state(struct lua_state_t *state, char *file, int line);
+void plua_clear_state(struct lua_state_t *state);
 struct lua_state_t *plua_get_current_state(lua_State *L);
 struct plua_module_t *plua_get_modules(void);
 void plua_init(void);
-int plua_check_stack(lua_State *L, int numargs, ...);
+void plua_ret_true(lua_State *L);
+void plua_ret_false(lua_State *L);
 #ifdef PILIGHT_UNITTEST
 void plua_pause_coverage(int status);
 void plua_coverage_output(const char *);
@@ -133,13 +112,5 @@ int plua_namespace(struct plua_module_t *module, char *p);
 void plua_package_path(const char *path);
 void plua_override_global(char *name, int (*func)(lua_State *L));
 int plua_gc(void);
-
-#define pluaL_error(a, b, ...) \
-	do { \
-		plua_set_file_line(a, __FILE__, __LINE__); \
-		luaL_error(a, b, ##__VA_ARGS__); \
-	} while(0)
-
-#define plua_clear_state(a) _plua_clear_state(a, __FILE__, __LINE__);
 
 #endif

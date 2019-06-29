@@ -44,18 +44,18 @@ static int plua_config_hardware_get_data(lua_State *L) {
 	struct plua_hardware_t *hw = (void *)lua_topointer(L, lua_upvalueindex(1));
 
 	if(lua_gettop(L) != 0) {
-		pluaL_error(L, "hardware.getUserdata requires 0 arguments, %d given", lua_gettop(L));
+		luaL_error(L, "hardware.getUserdata requires 0 arguments, %d given", lua_gettop(L));
 		return 0;
 	}
 
 	if(hw == NULL) {
-		pluaL_error(L, "internal error: hardware object not passed");
+		luaL_error(L, "internal error: hardware object not passed");
 		return 0;
 	}
 
 	plua_metatable__push(L, (struct plua_interface_t *)hw);
 
-	assert(plua_check_stack(L, 1, PLUA_TTABLE) == 0);
+	assert(lua_gettop(L) == 1);
 
 	return 1;
 }
@@ -64,11 +64,11 @@ static int plua_config_hardware_set_data(lua_State *L) {
 	struct plua_hardware_t *hw = (void *)lua_topointer(L, lua_upvalueindex(1));
 
 	if(lua_gettop(L) != 1) {
-		pluaL_error(L, "hardware.setUserdata requires 1 argument, %d given", lua_gettop(L));
+		luaL_error(L, "hardware.setUserdata requires 1 argument, %d given", lua_gettop(L));
 	}
 
 	if(hw == NULL) {
-		pluaL_error(L, "internal error: hardware object not passed");
+		luaL_error(L, "internal error: hardware object not passed");
 	}
 
 	char buf[128] = { '\0' }, *p = buf;
@@ -90,10 +90,7 @@ static int plua_config_hardware_set_data(lua_State *L) {
 			uv_sem_post(hw->table->ref);
 		}
 
-		lua_pushboolean(L, 1);
-
-		assert(plua_check_stack(L, 1, PLUA_TBOOLEAN) == 0);
-
+		plua_ret_true(L);
 		return 1;
 	}
 
@@ -104,18 +101,13 @@ static int plua_config_hardware_set_data(lua_State *L) {
 			lua_pop(L, 1);
 		}
 
-		lua_pushboolean(L, 1);
-
-		assert(plua_check_stack(L, 1, PLUA_TBOOLEAN) == 0);
-
+		plua_ret_true(L);
 		return 1;
 	}
 
-	lua_pushboolean(L, 0);
+	plua_ret_false(L);
 
-	assert(plua_check_stack(L, 1, PLUA_TBOOLEAN) == 0);
-
-	return 1;
+	return 0;
 }
 
 static int plua_config_hardware_validate(lua_State *L) {
@@ -123,11 +115,11 @@ static int plua_config_hardware_validate(lua_State *L) {
 	const char *setting = NULL;
 
 	if(hw == NULL) {
-		pluaL_error(L, "internal error: device object not passed");
+		luaL_error(L, "internal error: device object not passed");
 	}
 
 	if(lua_gettop(L) != 0) {
-		pluaL_error(L, "config hardware validate requires 0 arguments, %d given", lua_gettop(L));
+		luaL_error(L, "config hardware validate requires 0 arguments, %d given", lua_gettop(L));
 	}
 
 	char name[255], *p = name;
@@ -138,10 +130,8 @@ static int plua_config_hardware_validate(lua_State *L) {
 
 	if(lua_isnil(L, -1) != 0) {
 		lua_remove(L, -1);
-
-		assert(plua_check_stack(L, 0) == 0);
-
-		return 0;
+		assert(lua_gettop(L) == 0);
+		return -1;
 	}
 
 	if(lua_istable(L, -1) != 0) {
@@ -167,38 +157,38 @@ static int plua_config_hardware_validate(lua_State *L) {
 #endif
 			logprintf(LOG_ERR, "%s: validate function missing", file);
 			state->module = oldmod;
-
-			assert(plua_check_stack(L, 0) == 0);
-
 			return 0;
 		}
-		if(setting == NULL) {
-			lua_pushnil(L);
-		} else {
-			lua_pushstring(L, setting);
+		lua_pushstring(L, setting);
+		if(lua_pcall(L, 1, 1, 0) == LUA_ERRRUN) {
+			if(lua_type(L, -1) == LUA_TNIL) {
+				logprintf(LOG_ERR, "%s: syntax error", file);
+				state->module = oldmod;
+				lua_remove(L, 1);
+				lua_pushboolean(L, 0);
+				assert(lua_gettop(L) == 1);
+				return 1;
+			}
+			if(lua_type(L, -1) == LUA_TSTRING) {
+				logprintf(LOG_ERR, "%s", lua_tostring(L,  -1));
+				lua_pop(L, 1);
+				state->module = oldmod;
+				lua_remove(L, 1);
+				lua_pushboolean(L, 0);
+				assert(lua_gettop(L) == 1);
+				return 1;
+			}
 		}
-
-		assert(plua_check_stack(L, 3, PLUA_TTABLE, PLUA_TFUNCTION, PLUA_TSTRING | PLUA_TNIL) == 0);
-		if(plua_pcall(L, file, 1, 1) == -1) {
-			state->module = oldmod;
-			lua_pushboolean(L, 0);
-			assert(plua_check_stack(L, 1, PLUA_TBOOLEAN) == 0);
-
-			return 1;
-		}
-
 		state->module = oldmod;
 
 		lua_remove(L, 1);
 
-		assert(plua_check_stack(L, 1, PLUA_TNIL) == 0);
+		assert(lua_gettop(L) == 1);
 
 		return 1;
 	}
 	lua_pushboolean(L, 0);
-
-	assert(plua_check_stack(L, 1, PLUA_TBOOLEAN) == 0);
-
+	assert(lua_gettop(L) == 1);
 	return 1;
 }
 
@@ -228,10 +218,8 @@ int plua_config_hardware(lua_State *L) {
 
 	if(lua_isnil(L, -1) != 0) {
 		lua_remove(L, -1);
-
-		assert(plua_check_stack(L, 0) == 0);
-
-		return 0;
+		assert(lua_gettop(L) == 0);
+		return -1;
 	}
 
 	if(lua_istable(L, -1) != 0) {
@@ -268,7 +256,7 @@ int plua_config_hardware(lua_State *L) {
 		plua_gc_reg(L, (void *)hw, plua_config_hardware_gc);
 	}
 
-	assert(plua_check_stack(L, 1, PLUA_TTABLE) == 0);
+	assert(lua_gettop(L) == 1);
 
 	return 1;
 }

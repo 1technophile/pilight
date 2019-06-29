@@ -1,5 +1,5 @@
 /*
-	Copyright (C) CurlyMo
+	Copyright (C) 2013 - 2016 CurlyMo
 
   This Source Code Form is subject to the terms of the Mozilla Public
   License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -26,7 +26,6 @@
 #endif
 #include <sys/stat.h>
 #include <time.h>
-#include <assert.h>
 
 #include "../core/pilight.h"
 #include "../core/common.h"
@@ -73,7 +72,6 @@ void hardware_init(void) {
 
 	struct lua_state_t *state = plua_get_free_state();
 	int ret = config_setting_get_string(state->L, "hardware-root", 0, &hardware_root);
-	assert(plua_check_stack(state->L, 0) == 0);
 	plua_clear_state(state);
 
 	if((d = opendir(hardware_root))) {

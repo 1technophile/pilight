@@ -12,7 +12,6 @@
 #include "lua.h"
 #include "network/mail.h"
 #include "network/http.h"
-#include "network/coap.h"
 
 extern int plua_network_mail(struct lua_State *L);
 extern int plua_network_http(struct lua_State *L);
@@ -20,7 +19,6 @@ extern int plua_network_http(struct lua_State *L);
 static const luaL_Reg pilight_network_lib[] = {
 	{"mail", plua_network_mail},
 	{"http", plua_network_http},
-	{"coap", plua_network_coap},
 	{NULL, NULL}
 };
 
